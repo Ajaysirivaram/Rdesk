@@ -270,7 +270,6 @@ docker-compose up -d
 ---
 
 **CamelQ Software Solutions Pvt. Ltd.**  
-Plot no 305, Swamy Ayyappa nilayam, Ayyappa Society Main Rd,  
-SBH Officers Colony, Mega Hills, Madhapur, Hyderabad, Telangana 500081
+13th FLOOR, MANJEERA TRINITY CORPORATE, JNTU - HITECH CITY ROAD, 3/d PHASE, KPHB, KUKATPALLY, HYDERABAD - 500072
 
 *Built with ❤️ for efficient payslip management*
