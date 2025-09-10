@@ -110,7 +110,7 @@ class PayslipPDFGenerator:
         """Create company header section."""
         return [
             Paragraph("CAMELQ SOFTWARE SOLUTIONS PVT LTD", self.styles['CompanyHeader']),
-            Paragraph("Plot No. 1, 2nd Floor, Siri Estates, Madhapur, Hyderabad - 500081", self.styles['Normal']),
+            Paragraph("13th FLOOR, MANJEERA TRINITY CORPORATE, JNTU - HITECH CITY ROAD, 3/d PHASE, KPHB, KUKATPALLY, HYDERABAD - 500072", self.styles['Normal']),
             Paragraph("Tel: +91-40-12345678 | Email: info@camelq.com", self.styles['Normal']),
         ]
     

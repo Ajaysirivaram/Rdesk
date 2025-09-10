@@ -342,7 +342,7 @@ class FrontendPDFGenerator:
                     </div>
                     <div class="company-info">
                         <h1>CamelQ Software Solutions Pvt. Ltd.</h1>
-                        <p>Plot no 305,Swamy Ayyappa nilayam, Ayyappa Society Main Rd, SBH Officers Colony, Mega Hills, Madhapur, Hyderabad, Telangana 500081</p>
+                        <p>13th FLOOR, MANJEERA TRINITY CORPORATE, JNTU - HITECH CITY ROAD, 3/d PHASE, KPHB, KUKATPALLY, HYDERABAD - 500072</p>
                         <p style="margin-top: 4px; font-weight: 600;">Payslip for the Month of {payslip.pay_period_month} {payslip.pay_period_year}</p>
                     </div>
                     <div class="payslip-title">

@@ -170,7 +170,7 @@ const PayslipPreview = ({
         </div>
         <div className="flex-grow text-center text-sm" style={{ flexGrow: 1, textAlign: 'center', fontSize: '14px' }}>
           <h1 className="text-2xl font-bold" style={{ fontSize: '24px', fontWeight: 'bold' }}>CamelQ Software Solutions Pvt. Ltd.</h1>
-          <p style={{ margin: '4px 0' }}>Plot no 305,Swamy Ayyappa nilayam, Ayyappa Society Main Rd, SBH Officers Colony, Mega Hills, Madhapur, Hyderabad, Telangana 500081</p>
+          <p style={{ margin: '4px 0' }}>13th FLOOR, MANJEERA TRINITY CORPORATE, JNTU - HITECH CITY ROAD, 3/d PHASE, KPHB, KUKATPALLY, HYDERABAD - 500072</p>
           <p className="mt-1 font-semibold" style={{ marginTop: '4px', fontWeight: '600' }}>Payslip for the Month of {payPeriod.month} {payPeriod.year}</p>
         </div>
         <div className="w-32 flex-shrink-0 flex flex-col items-end justify-start" style={{ width: '128px', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-start' }}>
