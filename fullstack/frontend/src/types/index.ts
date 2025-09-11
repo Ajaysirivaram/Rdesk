@@ -14,6 +14,11 @@ export interface Employee {
   pay_mode: 'NEFT' | 'Cheque' | 'Cash';
   location: string;
   health_card_no?: string;
+  email?: string;
+  personal_email?: string;
+  password?: string;
+  password_changed?: boolean;
+  password_set_date?: string;
   lpa?: number;
   is_active: boolean;
   created_at: string;

@@ -268,6 +268,8 @@ def import_excel(request):
                         location=row['location'],
                         health_card_no=row.get('health_card_no', ''),
                         email=row.get('email', None),
+                        personal_email=row.get('personal_email', None),  # Add personal email field
+                        password=row.get('password', None),  # Add password field
                         lpa=lpa_value,
                         is_active=row.get('is_active', True) if 'is_active' in row else True
                     )
@@ -284,6 +286,18 @@ def import_excel(request):
                             )
                         except (ValueError, TypeError):
                             warnings.append(f"Row {index + 2}: Invalid annual_ctc value '{row['annual_ctc']}'")
+                    
+                    # Send welcome email if both personal_email and password are provided
+                    if employee.personal_email and employee.password:
+                        try:
+                            from .email_service import EmployeeEmailService
+                            email_service = EmployeeEmailService()
+                            success, message = email_service.send_welcome_email(employee)
+                            
+                            if not success:
+                                warnings.append(f"Row {index + 2}: Failed to send welcome email to {employee.personal_email}: {message}")
+                        except Exception as email_error:
+                            warnings.append(f"Row {index + 2}: Error sending welcome email: {str(email_error)}")
                     
                     imported_count += 1
                     
@@ -788,4 +802,41 @@ def get_actual_salary_credited(request):
         return Response({
             'success': False,
             'message': f'Error getting actual salary data: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_welcome_email(request, pk):
+    """
+    Send welcome email to specific employee.
+    """
+    try:
+        employee = get_object_or_404(Employee, pk=pk)
+        
+        if not employee.personal_email:
+            return Response({
+                'success': False,
+                'message': 'Employee has no personal email address'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not employee.password:
+            return Response({
+                'success': False,
+                'message': 'Employee has no password set'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        from .email_service import EmployeeEmailService
+        email_service = EmployeeEmailService()
+        success, message = email_service.send_welcome_email(employee)
+        
+        return Response({
+            'success': success,
+            'message': message
+        }, status=status.HTTP_200_OK if success else status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

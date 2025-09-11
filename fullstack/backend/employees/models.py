@@ -57,7 +57,26 @@ class Employee(models.Model):
     # Additional Information
     location = models.CharField(max_length=100)
     health_card_no = models.CharField(max_length=50, blank=True, null=True)
-    email = models.EmailField(max_length=255, blank=True, null=True, help_text='Employee email for payslip delivery')
+    email = models.EmailField(max_length=255, blank=True, null=True, help_text='Employee email for system login')
+    personal_email = models.EmailField(max_length=255, blank=True, null=True, help_text='Personal email for welcome emails and communication')
+    
+    # Login Credentials
+    password = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        help_text="Temporary password for system access"
+    )
+    password_changed = models.BooleanField(
+        default=False,
+        help_text="Whether employee has changed their initial password"
+    )
+    password_set_date = models.DateTimeField(
+        auto_now_add=True,
+        null=True,
+        blank=True,
+        help_text="When the password was set"
+    )
     
     # Salary Information
     lpa = models.DecimalField(

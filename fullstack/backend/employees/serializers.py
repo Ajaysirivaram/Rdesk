@@ -38,12 +38,19 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'location',
             'health_card_no',
             'email',
+            'personal_email',
+            'password',
+            'password_changed',
+            'password_set_date',
             'lpa',
             'is_active',
             'created_at',
             'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'password_changed', 'password_set_date', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'password': {'write_only': True},  # Don't return password in API responses
+        }
     
     def validate_employee_id(self, value):
         """
@@ -73,12 +80,33 @@ class EmployeeSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         """
-        Create employee with department.
+        Create employee with department and send welcome email if credentials provided.
         """
         department_id = validated_data.pop('department_id')
         department = Department.objects.get(id=department_id)
         validated_data['department'] = department
-        return super().create(validated_data)
+        
+        # Create employee
+        employee = super().create(validated_data)
+        
+        # Send welcome email if both personal_email and password are provided
+        if employee.personal_email and employee.password:
+            try:
+                from .email_service import EmployeeEmailService
+                email_service = EmployeeEmailService()
+                success, message = email_service.send_welcome_email(employee)
+                
+                if success:
+                    import logging
+                    logging.getLogger('employees').info(f"Welcome email sent to {employee.personal_email}")
+                else:
+                    import logging
+                    logging.getLogger('employees').warning(f"Failed to send welcome email to {employee.personal_email}: {message}")
+            except Exception as e:
+                import logging
+                logging.getLogger('employees').error(f"Error sending welcome email: {str(e)}")
+        
+        return employee
     
     def update(self, instance, validated_data):
         """

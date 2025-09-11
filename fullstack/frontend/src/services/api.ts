@@ -58,6 +58,8 @@ export const employeeAPI = {
   },
   getByDepartment: (departmentId: string) => 
     api.get(`/employees/?department=${departmentId}`),
+  sendWelcomeEmail: (employeeId: string) => 
+    api.post(`/employees/${employeeId}/send-welcome-email/`),
 };
 
 // Monthly Salary API

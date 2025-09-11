@@ -25,4 +25,7 @@ urlpatterns = [
     path('salary-preview/', views.get_salary_calculation_preview, name='salary-calculation-preview'),
     path('actual-salary/upload/', views.upload_actual_salary_credited, name='upload-actual-salary-credited'),
     path('actual-salary/', views.get_actual_salary_credited, name='get-actual-salary-credited'),
+    
+    # Email URLs
+    path('<int:pk>/send-welcome-email/', views.send_welcome_email, name='send-welcome-email'),
 ]
