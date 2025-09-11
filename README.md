@@ -33,7 +33,7 @@ A comprehensive full-stack payslip management system with QR code verification, 
 ### Technology Stack
 - **Backend**: Django 4.2, Django REST Framework, Celery
 - **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
-- **Database**: SQLite (configurable for PostgreSQL/MySQL)
+- **Database**: MySQL (configurable for PostgreSQL/SQLite)
 - **PDF Generation**: Playwright, ReportLab
 - **QR Code**: qrcode library
 - **Email**: SMTP integration
@@ -135,7 +135,7 @@ Create a `.env` file in `fullstack/backend/`:
 ```env
 SECRET_KEY=your-secret-key
 DEBUG=True
-DATABASE_URL=sqlite:///db.sqlite3
+DATABASE_URL=mysql://user:password@localhost:3306/payslip_db
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_HOST_USER=your-email@gmail.com
@@ -143,7 +143,7 @@ EMAIL_HOST_PASSWORD=your-app-password
 ```
 
 ### Database Configuration
-The system uses SQLite by default. To use PostgreSQL or MySQL, update the database settings in `camelq_payslip/settings.py`.
+The system uses MySQL by default. To use PostgreSQL or SQLite, update the database settings in `camelq_payslip/settings.py`.
 
 ## 📱 Usage
 
