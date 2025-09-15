@@ -18,7 +18,6 @@ import {
 
 // Import components
 import EmployeeManagement from './EmployeeManagement';
-import MonthlySalaryManagement from './MonthlySalaryManagement';
 import BulkEmployeeSelector from './BulkEmployeeSelector';
 import PeriodSelector from './PeriodSelector';
 import SalaryMethodSelector from './SalaryMethodSelector';
@@ -90,7 +89,7 @@ const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="generate" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Generate Payslips
@@ -98,10 +97,6 @@ const Dashboard: React.FC = () => {
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Upload Salary
-            </TabsTrigger>
-            <TabsTrigger value="monthly-salary" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Monthly Salary
             </TabsTrigger>
             <TabsTrigger value="actual-salary" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
@@ -203,10 +198,6 @@ const Dashboard: React.FC = () => {
             />
           </TabsContent>
 
-          {/* Monthly Salary Management Tab */}
-          <TabsContent value="monthly-salary">
-            <MonthlySalaryManagement />
-          </TabsContent>
 
           {/* Actual Salary Upload Tab */}
           <TabsContent value="actual-salary" className="space-y-6">
