@@ -25,6 +25,36 @@ export interface Employee {
   updated_at: string;
 }
 
+// Monthly Salary Data Types
+export interface MonthlySalaryData {
+  id: string;
+  employee: string;
+  employee_name: string;
+  employee_id: string;
+  month: string;
+  year: number;
+  basic: number;
+  hra: number;
+  da: number;
+  conveyance: number;
+  medical: number;
+  special_allowance: number;
+  pf_employee: number;
+  professional_tax: number;
+  pf_employer: number;
+  other_deductions: number;
+  salary_advance: number;
+  work_days: number;
+  days_in_month: number;
+  lop_days: number;
+  total_earnings: number;
+  total_deductions: number;
+  net_pay: number;
+  uploaded_at: string;
+  uploaded_by: string;
+  uploaded_by_name: string;
+}
+
 // Department Types
 export interface Department {
   id: string;

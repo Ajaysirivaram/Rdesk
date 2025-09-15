@@ -378,9 +378,9 @@ def get_employees_by_department(request, department_id):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
-class MonthlySalaryDataListView(generics.ListAPIView):
+class MonthlySalaryDataListView(generics.ListCreateAPIView):
     """
-    List monthly salary data.
+    List and create monthly salary data.
     """
     queryset = MonthlySalaryData.objects.all().select_related('employee', 'uploaded_by')
     serializer_class = MonthlySalaryDataSerializer
@@ -390,6 +390,12 @@ class MonthlySalaryDataListView(generics.ListAPIView):
     search_fields = ['employee__name', 'employee__employee_id']
     ordering_fields = ['month', 'year', 'uploaded_at']
     ordering = ['-year', '-month']
+    
+    def perform_create(self, serializer):
+        """
+        Set the uploaded_by field to the current user.
+        """
+        serializer.save(uploaded_by=self.request.user)
 
 
 class MonthlySalaryDataDetailView(generics.RetrieveUpdateDestroyAPIView):

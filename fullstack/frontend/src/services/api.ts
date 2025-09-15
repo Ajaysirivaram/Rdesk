@@ -62,17 +62,17 @@ export const employeeAPI = {
     api.post(`/employees/${employeeId}/send-welcome-email/`),
 };
 
-// Monthly Salary API
 export const monthlySalaryAPI = {
   getAll: () => api.get('/employees/monthly-salaries/'),
   getById: (id: string) => api.get(`/employees/monthly-salaries/${id}/`),
+  create: (data: any) => api.post('/employees/monthly-salaries/', data),
+  update: (id: string, data: any) => api.put(`/employees/monthly-salaries/${id}/`, data),
+  delete: (id: string) => api.delete(`/employees/monthly-salaries/${id}/`),
   getByMonthYear: (month: string, year: number) => 
     api.get(`/employees/monthly-salaries/${month}/${year}/`),
-  uploadExcel: (file: File, month: string, year: number) => {
+  uploadExcel: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('month', month);
-    formData.append('year', year.toString());
     return api.post('/employees/monthly-salaries/upload/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
