@@ -18,7 +18,8 @@
 
     "strict": false,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/lib/utils": ["./src/lib/utils.ts"]
     }
   },
   "include": ["src"],

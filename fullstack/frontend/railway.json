@@ -1,4 +1,18 @@
-{
+My Railway deployment is failing because the builder is trying to install Python with mise python@Python, but the log shows:
+
+python-build: definition not found: Python
+mise ERROR failed to install core:python@Python
+
+
+This is happening because my repo has a .python-version file with just Python in it. Railway expects a valid version like python-3.11.9.
+
+👉 Please fix this issue by:
+
+Setting the correct Python version (e.g., python-3.11.9) in either .python-version or runtime.txt.
+
+Making sure the project builds properly on Railway with Node for frontend and Python for backend (Django).
+
+If frontend and backend are separate, configure so that frontend only uses Node, and backend only uses Python (so Railway doesn’t try to install both unnecessarily).{
   "$schema": "https://railway.app/railway.schema.json",
   "deploy": {
     "startCommand": "npm run build && npm run start",
