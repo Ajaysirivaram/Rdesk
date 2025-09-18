@@ -21,6 +21,7 @@ def check_admin():
             print(f"✅ Admin user exists!")
             print(f"Username: {admin_user.username}")
             print(f"Email: {admin_user.email}")
+            print(f"Full Name: {admin_user.full_name}")
             print(f"Is Active: {admin_user.is_active}")
             print(f"Is Staff: {admin_user.is_staff}")
             print(f"Is Superuser: {admin_user.is_superuser}")
