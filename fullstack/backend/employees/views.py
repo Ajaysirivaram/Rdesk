@@ -1043,13 +1043,22 @@ def get_email_logs(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Temporarily allow any for testing
+@permission_classes([IsAuthenticated])  # Require authentication
 @csrf_exempt
 def process_welcome_email_excel(request):
     """
     Process Excel file for welcome email sending.
     """
     try:
+        # Add timeout and better error handling
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Request timeout")
+        
+        # Set a timeout for the entire operation
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(25)  # 25 seconds timeout (less than Railway's 30s)
         # Check if it's a file upload or manual form submission
         if 'file' in request.FILES:
             # File upload processing
@@ -1190,6 +1199,9 @@ def process_welcome_email_excel(request):
             except Exception as e:
                 errors.append(f"Row {index + 1}: {str(e)}")
         
+        # Cancel the timeout
+        signal.alarm(0)
+        
         return Response({
             'success': True,
             'message': f'Processed {processed_count} employees, sent {emails_sent} welcome emails',
@@ -1199,7 +1211,15 @@ def process_welcome_email_excel(request):
             'errors': errors
         }, status=status.HTTP_200_OK)
         
+    except TimeoutError:
+        signal.alarm(0)  # Cancel timeout
+        return Response({
+            'success': False,
+            'message': 'Request timeout - operation took too long'
+        }, status=status.HTTP_408_REQUEST_TIMEOUT)
+        
     except Exception as e:
+        signal.alarm(0)  # Cancel timeout
         return Response({
             'success': False,
             'message': f'Error processing file: {str(e)}'
@@ -1214,44 +1234,48 @@ def test_welcome_email_simple(request):
     Simple test endpoint for welcome email without authentication
     """
     try:
-        manual_data = {
-            'name': request.data.get('name', 'Test User'),
-            'personal_email': request.data.get('personal_email', 'test@example.com'),
-            'password': request.data.get('password', 'TestPass123!'),
-            'system_email': request.data.get('system_email', 'test@camelq.co.in')
-        }
+        # Create a test employee object
+        from departments.models import Department
         
-        # Create test employee object
-        class TestEmployee:
-            def __init__(self, name, email, personal_email, password, employee_id):
-                self.name = name
-                self.email = email
-                self.personal_email = personal_email
-                self.password = password
-                self.employee_id = employee_id
+        # Get first department or create one
+        department = Department.objects.first()
+        if not department:
+            return Response({
+                'success': False,
+                'message': 'No departments available. Please create a department first.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        test_employee = TestEmployee(
-            name=manual_data['name'],
-            email=manual_data['system_email'],
-            personal_email=manual_data['personal_email'],
-            password=manual_data['password'],
-            employee_id='TEST001'
+        # Create test employee
+        test_employee = Employee(
+            name="Test Employee",
+            employee_id="TEST001",
+            email="test@example.com",
+            personal_email=request.data.get('email', 'test@example.com'),
+            password=request.data.get('password', 'test123'),
+            department=department,
+            position="Test Position",
+            doj=timezone.now().date(),
+            annual_ctc=500000
         )
         
-        # Send email
+        # Test email service
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(test_employee)
         
         return Response({
             'success': success,
             'message': message,
-            'test_data': manual_data
-        }, status=status.HTTP_200_OK)
+            'test_employee': {
+                'name': test_employee.name,
+                'email': test_employee.email,
+                'personal_email': test_employee.personal_email
+            }
+        }, status=status.HTTP_200_OK if success else status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     except Exception as e:
         return Response({
             'success': False,
-            'message': f'Error: {str(e)}'
+            'message': f'Test failed: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

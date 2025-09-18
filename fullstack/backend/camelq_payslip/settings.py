@@ -152,7 +152,29 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "https://frontend-production-0c5f.up.railway.app",
 ]
+
+# Additional CORS settings for better compatibility
+CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
     "https://web-production-5f64c.up.railway.app",
