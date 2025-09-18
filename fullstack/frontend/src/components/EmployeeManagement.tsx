@@ -93,15 +93,24 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
   const loadData = async () => {
     try {
       setIsLoading(true);
+      console.log('Loading employees and departments...');
+      
       const [employeesResponse, departmentsResponse] = await Promise.all([
         employeeAPI.getAll(),
         departmentAPI.getAll()
       ]);
       
+      console.log('Employees response:', employeesResponse);
+      console.log('Departments response:', departmentsResponse);
+      
       setEmployees(employeesResponse.data.results || employeesResponse.data);
       setDepartments(departmentsResponse.data.results || departmentsResponse.data);
+      
+      console.log('Loaded departments:', departmentsResponse.data.results || departmentsResponse.data);
     } catch (error) {
       console.error('Error loading data:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
     } finally {
       setIsLoading(false);
     }

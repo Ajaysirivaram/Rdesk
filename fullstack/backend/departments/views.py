@@ -56,3 +56,37 @@ def department_stats(request):
         'success': True,
         'data': stats
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_departments(request):
+    """
+    Check if departments exist in the database.
+    """
+    try:
+        total_departments = Department.objects.count()
+        active_departments = Department.objects.filter(is_active=True).count()
+        
+        departments = Department.objects.filter(is_active=True)
+        dept_list = []
+        for dept in departments:
+            dept_list.append({
+                'id': dept.id,
+                'code': dept.department_code,
+                'name': dept.department_name,
+                'is_active': dept.is_active
+            })
+        
+        return Response({
+            'success': True,
+            'total_departments': total_departments,
+            'active_departments': active_departments,
+            'departments': dept_list
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
