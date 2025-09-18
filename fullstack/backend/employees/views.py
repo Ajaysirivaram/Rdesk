@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db import transaction, models
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Employee, SalaryStructure, MonthlySalaryData, ActualSalaryCredited, EmailLog
 from .serializers import (
@@ -922,7 +923,11 @@ def send_welcome_email_with_credentials(request, pk):
             email=employee.email,
             personal_email=custom_email,
             password=custom_password,
-            employee_id=employee.employee_id
+            employee_id=employee.employee_id,
+            department=employee.department,
+            position=employee.position,
+            doj=employee.doj,
+            annual_ctc=employee.annual_ctc
         )
         
         email_service = EmployeeEmailService()

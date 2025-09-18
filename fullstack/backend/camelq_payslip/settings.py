@@ -166,6 +166,9 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'cache-control',
+    'pragma',
+    'expires',
 ]
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -174,6 +177,11 @@ CORS_ALLOW_METHODS = [
     'PATCH',
     'POST',
     'PUT',
+]
+CORS_PREFLIGHT_MAX_AGE = 86400
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'x-csrftoken',
 ]
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
