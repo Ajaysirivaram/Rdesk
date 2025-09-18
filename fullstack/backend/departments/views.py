@@ -16,7 +16,7 @@ class DepartmentListCreateView(generics.ListCreateAPIView):
     """
     queryset = Department.objects.filter(is_active=True)
     serializer_class = DepartmentSerializer
-    permission_classes = [AllowAny]  # Temporarily allow unauthenticated access for testing
+    permission_classes = [IsAuthenticated]
 
 
 @method_decorator(csrf_exempt, name='dispatch')
