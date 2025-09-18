@@ -21,9 +21,5 @@ COPY . .
 # Set working directory to backend
 WORKDIR /app/fullstack/backend
 
-# Copy and make startup script executable
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-# Run the startup script
-CMD ["/app/start.sh"]
+# Run migrations, create admin, and start server
+CMD python manage.py migrate && python manage.py create_admin && gunicorn camelq_payslip.wsgi --bind 0.0.0.0:$PORT

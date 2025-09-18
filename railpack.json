@@ -1,7 +1,0 @@
-{
-  "build": {
-    "commands": {
-      "postinstall": "cd fullstack/backend && python create_admin.py && python check_admin.py"
-    }
-  }
-}
