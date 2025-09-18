@@ -1,6 +1,6 @@
 from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
@@ -16,7 +16,7 @@ class DepartmentListCreateView(generics.ListCreateAPIView):
     """
     queryset = Department.objects.filter(is_active=True)
     serializer_class = DepartmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Temporarily allow unauthenticated access for testing
 
 
 @method_decorator(csrf_exempt, name='dispatch')
