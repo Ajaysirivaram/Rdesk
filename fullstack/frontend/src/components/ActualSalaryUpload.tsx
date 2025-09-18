@@ -59,7 +59,7 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
 
   const fetchExistingData = async () => {
     try {
-      const response = await actualSalaryAPI.getByMonthYear(payPeriod.month, payPeriod.year);
+      const response = await actualSalaryAPI.getByMonthYear(parseInt(payPeriod.month), parseInt(payPeriod.year));
       if (response.data.success) {
         setExistingData(response.data.data);
         
@@ -121,8 +121,8 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
           employee_id: emp.employee_id,
           actual_salary_credited: emp.actual_salary_credited,
         })),
-        payPeriod.month,
-        payPeriod.year
+        parseInt(payPeriod.month),
+        parseInt(payPeriod.year)
       );
 
       clearInterval(progressInterval);
