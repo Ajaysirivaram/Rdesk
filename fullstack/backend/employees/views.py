@@ -933,7 +933,7 @@ def send_welcome_email_with_credentials(request, pk):
             bank_ifsc=employee.bank_ifsc,
             location=employee.location,
             pay_mode=employee.pay_mode,
-            annual_ctc=employee.annual_ctc
+            lpa=employee.lpa
         )
         
         email_service = EmployeeEmailService()
@@ -1272,7 +1272,7 @@ def test_welcome_email_simple(request):
             bank_ifsc="SBIN0001234",  # Required field
             location="Test Location",  # Required field
             pay_mode="NEFT",  # Required field
-            annual_ctc=500000
+            lpa=5.0  # 5 LPA
         )
         
         # Test email service
