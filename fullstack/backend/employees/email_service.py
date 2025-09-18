@@ -112,13 +112,21 @@ class EmployeeEmailService:
                 error_msg = f"SMTP error: {str(smtp_error)}"
                 logging.getLogger('employees').warning(error_msg)
                 
+                # Check for specific Hostinger SMTP errors
+                if "Network is unreachable" in str(smtp_error):
+                    error_msg = "SMTP connection failed: Network unreachable. Please check Hostinger SMTP settings and credentials."
+                elif "Authentication failed" in str(smtp_error):
+                    error_msg = "SMTP authentication failed. Please check email credentials."
+                elif "Connection refused" in str(smtp_error):
+                    error_msg = "SMTP connection refused. Please check Hostinger SMTP server settings."
+                
                 # Update email log with SMTP error
                 email_log.status = 'FAILED'
                 email_log.error_message = error_msg
                 email_log.save()
                 
                 # Return success but with warning (for development/testing)
-                return True, f"Email queued (SMTP not configured): {error_msg}"
+                return True, f"Email queued (SMTP error): {error_msg}"
             
         except Exception as e:
             error_msg = f"Failed to send welcome email to {employee.personal_email}: {str(e)}"
