@@ -12,3 +12,6 @@ cmd = "npm run start"
 
 [providers]
 nodejs = "20"
+
+[detectors]
+python = false
