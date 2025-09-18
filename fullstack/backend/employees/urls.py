@@ -28,4 +28,10 @@ urlpatterns = [
     
     # Email URLs
     path('<int:pk>/send-welcome-email/', views.send_welcome_email, name='send-welcome-email'),
+    path('send-bulk-welcome-emails/', views.send_bulk_welcome_emails, name='send-bulk-welcome-emails'),
+    path('<int:pk>/send-welcome-email-with-credentials/', views.send_welcome_email_with_credentials, name='send-welcome-email-with-credentials'),
+    path('welcome-email-employees/', views.get_employees_for_welcome_email, name='get-employees-for-welcome-email'),
+    path('email-logs/', views.get_email_logs, name='get-email-logs'),
+    path('process-welcome-email-excel/', views.process_welcome_email_excel, name='process-welcome-email-excel'),
+    path('test-welcome-email/', views.test_welcome_email_simple, name='test-welcome-email-simple'),
 ]

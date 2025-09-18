@@ -4,13 +4,13 @@ import logging
 from decimal import Decimal
 from rest_framework import status, generics, filters
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.db import transaction
+from django.db import transaction, models
 from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Employee, SalaryStructure, MonthlySalaryData, ActualSalaryCredited
+from .models import Employee, SalaryStructure, MonthlySalaryData, ActualSalaryCredited, EmailLog
 from .serializers import (
     EmployeeSerializer, 
     SalaryStructureSerializer, 
@@ -840,6 +840,418 @@ def send_welcome_email(request, pk):
             'success': success,
             'message': message
         }, status=status.HTTP_200_OK if success else status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_bulk_welcome_emails(request):
+    """
+    Send welcome emails to multiple employees.
+    """
+    try:
+        employee_ids = request.data.get('employee_ids', [])
+        if not employee_ids:
+            return Response({
+                'success': False,
+                'message': 'No employee IDs provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get employees
+        employees = Employee.objects.filter(
+            id__in=employee_ids,
+            is_active=True,
+            personal_email__isnull=False,
+            password__isnull=False
+        ).exclude(personal_email='').exclude(password='')
+        
+        if not employees.exists():
+            return Response({
+                'success': False,
+                'message': 'No valid employees found with email and password'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        from .email_service import EmployeeEmailService
+        email_service = EmployeeEmailService()
+        results = email_service.send_bulk_welcome_emails(employees)
+        
+        return Response({
+            'success': True,
+            'message': f'Bulk welcome emails processed. Sent: {results["sent"]}, Failed: {results["failed"]}',
+            'results': results
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_welcome_email_with_credentials(request, pk):
+    """
+    Send welcome email to employee with custom credentials.
+    """
+    try:
+        employee = get_object_or_404(Employee, pk=pk)
+        
+        # Get custom credentials from request
+        custom_email = request.data.get('personal_email', employee.personal_email)
+        custom_password = request.data.get('password', employee.password)
+        
+        if not custom_email:
+            return Response({
+                'success': False,
+                'message': 'No email address provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not custom_password:
+            return Response({
+                'success': False,
+                'message': 'No password provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create temporary employee object with custom credentials
+        temp_employee = Employee(
+            name=employee.name,
+            email=employee.email,
+            personal_email=custom_email,
+            password=custom_password,
+            employee_id=employee.employee_id
+        )
+        
+        from .email_service import EmployeeEmailService
+        email_service = EmployeeEmailService()
+        success, message = email_service.send_welcome_email(temp_employee)
+        
+        return Response({
+            'success': success,
+            'message': message
+        }, status=status.HTTP_200_OK if success else status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_employees_for_welcome_email(request):
+    """
+    Get list of employees who can receive welcome emails.
+    """
+    try:
+        # Get employees without personal email or password
+        employees_missing_info = Employee.objects.filter(
+            is_active=True
+        ).filter(
+            models.Q(personal_email__isnull=True) | 
+            models.Q(personal_email='') | 
+            models.Q(password__isnull=True) | 
+            models.Q(password='')
+        ).select_related('department')
+        
+        # Get employees with complete info
+        employees_ready = Employee.objects.filter(
+            is_active=True,
+            personal_email__isnull=False,
+            password__isnull=False
+        ).exclude(personal_email='').exclude(password='').select_related('department')
+        
+        # Serialize data
+        missing_serializer = EmployeeSerializer(employees_missing_info, many=True)
+        ready_serializer = EmployeeSerializer(employees_ready, many=True)
+        
+        return Response({
+            'success': True,
+            'employees_ready': ready_serializer.data,
+            'employees_missing_info': missing_serializer.data,
+            'counts': {
+                'ready': employees_ready.count(),
+                'missing_info': employees_missing_info.count()
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_email_logs(request):
+    """
+    Get email sending logs with optional filtering.
+    """
+    try:
+        # Get query parameters
+        email_type = request.GET.get('email_type')
+        status_filter = request.GET.get('status')
+        employee_id = request.GET.get('employee_id')
+        limit = int(request.GET.get('limit', 50))
+        
+        # Build queryset
+        queryset = EmailLog.objects.all().select_related('employee')
+        
+        if email_type:
+            queryset = queryset.filter(email_type=email_type)
+        
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+            
+        if employee_id:
+            queryset = queryset.filter(employee_id=employee_id)
+        
+        # Order by most recent first and limit results
+        queryset = queryset.order_by('-sent_at')[:limit]
+        
+        # Serialize data
+        logs_data = []
+        for log in queryset:
+            logs_data.append({
+                'id': log.id,
+                'employee_id': log.employee.employee_id if log.employee else None,
+                'employee_name': log.employee.name if log.employee else 'N/A',
+                'email_type': log.email_type,
+                'recipient_email': log.recipient_email,
+                'subject': log.subject,
+                'status': log.status,
+                'message': log.message,
+                'sent_at': log.sent_at.isoformat(),
+                'error_message': log.error_message
+            })
+        
+        return Response({
+            'success': True,
+            'logs': logs_data,
+            'count': len(logs_data)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # Temporarily allow any for testing
+@csrf_exempt
+def process_welcome_email_excel(request):
+    """
+    Process Excel file for welcome email sending.
+    """
+    try:
+        # Check if it's a file upload or manual form submission
+        if 'file' in request.FILES:
+            # File upload processing
+            file = request.FILES['file']
+            
+            # Read Excel file
+            if file.name.endswith('.csv'):
+                df = pd.read_csv(file)
+            else:
+                df = pd.read_excel(file)
+        else:
+            # Manual form processing - create a single-row DataFrame
+            manual_data = {
+                'name': request.data.get('name', ''),
+                'personal_email': request.data.get('personal_email', ''),
+                'password': request.data.get('password', ''),
+                'system_email': request.data.get('system_email', '')
+            }
+            df = pd.DataFrame([manual_data])
+        
+        # Validate required columns
+        required_columns = ['name', 'personal_email', 'password', 'system_email']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            return Response({
+                'success': False,
+                'message': f'Missing required columns: {", ".join(missing_columns)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Process each row
+        processed_count = 0
+        emails_sent = 0
+        errors = []
+        
+        from .email_service import EmployeeEmailService
+        email_service = EmployeeEmailService()
+        
+        for index, row in df.iterrows():
+            try:
+                # Find or create employee
+                employee = None
+                
+                # First try to find by system_email
+                if 'system_email' in row and pd.notna(row['system_email']):
+                    try:
+                        employee = Employee.objects.get(email=row['system_email'])
+                    except Employee.DoesNotExist:
+                        pass
+                
+                # If not found, try to find by personal_email
+                if not employee and 'personal_email' in row and pd.notna(row['personal_email']):
+                    try:
+                        employee = Employee.objects.get(personal_email=row['personal_email'])
+                    except Employee.DoesNotExist:
+                        pass
+                
+                # If still not found, create a new employee
+                if not employee:
+                    # Validate required fields for new employee
+                    if not all(pd.notna(row.get(field, '')) for field in ['name', 'system_email', 'personal_email', 'password']):
+                        errors.append(f"Row {index + 1}: Missing required fields for new employee creation")
+                        continue
+                    
+                    # Create new employee with all required fields
+                    from datetime import date
+                    from departments.models import Department
+                    
+                    # Get default department (first available)
+                    default_department = Department.objects.first()
+                    if not default_department:
+                        errors.append(f"Row {index + 1}: No departments available. Please create a department first.")
+                        continue
+                    
+                    # Generate unique employee ID
+                    def generate_unique_employee_id():
+                        counter = 1
+                        while True:
+                            new_id = f"NEW{counter:03d}"
+                            if not Employee.objects.filter(employee_id=new_id).exists():
+                                return new_id
+                            counter += 1
+                            if counter > 999:  # Safety limit
+                                return f"NEW{int(time.time())}"  # Fallback to timestamp
+                    
+                    import time
+                    unique_employee_id = generate_unique_employee_id()
+                    
+                    employee = Employee.objects.create(
+                        # Basic Information
+                        employee_id=unique_employee_id,
+                        name=row['name'].strip(),
+                        position='New Employee',  # Default position
+                        department=default_department,
+                        
+                        # Personal Information
+                        dob=date(1990, 1, 1),  # Default DOB - should be updated later
+                        doj=date.today(),  # Date of joining = today
+                        
+                        # Financial Information
+                        pan='ABCDE1234F',  # Default PAN - should be updated later
+                        bank_account='1234567890',  # Default bank account - should be updated later
+                        bank_ifsc='ABCD0123456',  # Default IFSC - should be updated later
+                        pay_mode='NEFT',
+                        
+                        # Additional Information
+                        location='Office',  # Default location
+                        
+                        # Email and Login
+                        email=row['system_email'].strip(),
+                        personal_email=row['personal_email'].strip(),
+                        password=row['password'].strip(),
+                        
+                        # Salary Information
+                        lpa=0,  # Default salary - should be updated later
+                    )
+                    print(f"Created new employee: {employee.name} ({employee.email})")
+                
+                # Update employee with new credentials
+                if 'personal_email' in row and pd.notna(row['personal_email']):
+                    employee.personal_email = row['personal_email']
+                if 'password' in row and pd.notna(row['password']):
+                    employee.password = row['password']
+                if 'system_email' in row and pd.notna(row['system_email']):
+                    employee.email = row['system_email']
+                
+                employee.save()
+                
+                # Send welcome email
+                success, message = email_service.send_welcome_email(employee)
+                
+                if success:
+                    emails_sent += 1
+                else:
+                    errors.append(f"Row {index + 1}: {message}")
+                
+                processed_count += 1
+                
+            except Exception as e:
+                errors.append(f"Row {index + 1}: {str(e)}")
+        
+        return Response({
+            'success': True,
+            'message': f'Processed {processed_count} employees, sent {emails_sent} welcome emails',
+            'processed_count': processed_count,
+            'emails_sent': emails_sent,
+            'new_employees_created': processed_count - len([e for e in errors if 'not found' not in e]),
+            'errors': errors
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Error processing file: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
+def test_welcome_email_simple(request):
+    """
+    Simple test endpoint for welcome email without authentication
+    """
+    try:
+        manual_data = {
+            'name': request.data.get('name', 'Test User'),
+            'personal_email': request.data.get('personal_email', 'test@example.com'),
+            'password': request.data.get('password', 'TestPass123!'),
+            'system_email': request.data.get('system_email', 'test@camelq.co.in')
+        }
+        
+        # Create test employee object
+        class TestEmployee:
+            def __init__(self, name, email, personal_email, password, employee_id):
+                self.name = name
+                self.email = email
+                self.personal_email = personal_email
+                self.password = password
+                self.employee_id = employee_id
+        
+        test_employee = TestEmployee(
+            name=manual_data['name'],
+            email=manual_data['system_email'],
+            personal_email=manual_data['personal_email'],
+            password=manual_data['password'],
+            employee_id='TEST001'
+        )
+        
+        # Send email
+        from .email_service import EmployeeEmailService
+        email_service = EmployeeEmailService()
+        success, message = email_service.send_welcome_email(test_employee)
+        
+        return Response({
+            'success': success,
+            'message': message,
+            'test_data': manual_data
+        }, status=status.HTTP_200_OK)
         
     except Exception as e:
         return Response({

@@ -1,6 +1,7 @@
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
+from .models import EmailLog
 import logging
 
 class EmployeeEmailService:
@@ -29,6 +30,15 @@ class EmployeeEmailService:
         
         if not employee.password:
             return False, "No password provided"
+        
+        # Create email log entry
+        email_log = EmailLog.objects.create(
+            employee=employee if hasattr(employee, 'id') else None,
+            email_type='WELCOME',
+            recipient_email=employee.personal_email,
+            subject=f"Welcome to {self.company_name}",
+            status='PENDING'
+        )
         
         try:
             # Prepare email context
@@ -59,6 +69,11 @@ class EmployeeEmailService:
             # Send email
             email.send()
             
+            # Update email log
+            email_log.status = 'SENT'
+            email_log.message = "Welcome email sent successfully"
+            email_log.save()
+            
             logging.getLogger('employees').info(
                 f"Welcome email sent successfully to {employee.personal_email} for employee {employee.employee_id}"
             )
@@ -66,6 +81,12 @@ class EmployeeEmailService:
             
         except Exception as e:
             error_msg = f"Failed to send welcome email to {employee.personal_email}: {str(e)}"
+            
+            # Update email log with error
+            email_log.status = 'FAILED'
+            email_log.error_message = error_msg
+            email_log.save()
+            
             logging.getLogger('employees').error(error_msg)
             return False, error_msg
     

@@ -32,14 +32,16 @@ import {
   Edit,
   Trash2,
   Eye,
-  MoreHorizontal
+  MoreHorizontal,
+  Mail
 } from 'lucide-react';
 
 interface EmployeeManagementProps {
   onNavigateToUpload?: () => void;
+  onNavigateToWelcomeEmails?: () => void;
 }
 
-const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpload }) => {
+const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpload, onNavigateToWelcomeEmails }) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
@@ -170,17 +172,84 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
     return dept ? dept.department_name : 'Unknown';
   };
 
+  // Form validation function
+  const validateEmployeeForm = (formData: any) => {
+    const errors: string[] = [];
+    
+    // Required field validation
+    if (!formData.employee_id?.trim()) errors.push('Employee ID is required');
+    if (!formData.name?.trim()) errors.push('Name is required');
+    if (!formData.position?.trim()) errors.push('Position is required');
+    if (!formData.department_id) errors.push('Department is required');
+    if (!formData.dob) errors.push('Date of Birth is required');
+    if (!formData.doj) errors.push('Date of Joining is required');
+    if (!formData.pan?.trim()) errors.push('PAN is required');
+    if (!formData.bank_account?.trim()) errors.push('Bank Account is required');
+    if (!formData.bank_ifsc?.trim()) errors.push('Bank IFSC is required');
+    if (!formData.location?.trim()) errors.push('Location is required');
+    
+    // Format validation
+    if (formData.employee_id && !/^[A-Z0-9]+$/.test(formData.employee_id)) {
+      errors.push('Employee ID must contain only uppercase letters and numbers');
+    }
+    
+    if (formData.pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formData.pan)) {
+      errors.push('PAN must be in format: ABCDE1234F');
+    }
+    
+    if (formData.bank_ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.bank_ifsc)) {
+      errors.push('IFSC must be in format: ABCD0123456');
+    }
+    
+    // Date validation
+    if (formData.dob && new Date(formData.dob) > new Date()) {
+      errors.push('Date of Birth cannot be in the future');
+    }
+    
+    if (formData.doj && new Date(formData.doj) > new Date()) {
+      errors.push('Date of Joining cannot be in the future');
+    }
+    
+    if (formData.dob && formData.doj && new Date(formData.dob) >= new Date(formData.doj)) {
+      errors.push('Date of Joining must be after Date of Birth');
+    }
+    
+    return errors;
+  };
+
   const handleCreateEmployee = async () => {
     try {
       setIsCreating(true);
       
-      // Prepare form data
-      const formData = { ...employeeForm };
+      // Validate form data
+      const validationErrors = validateEmployeeForm(employeeForm);
+      if (validationErrors.length > 0) {
+        alert(`Please fix the following errors:\n${validationErrors.join('\n')}`);
+        return;
+      }
+      
+      // Prepare form data with proper types
+      const formData = { 
+        ...employeeForm,
+        department_id: parseInt(employeeForm.department_id), // Convert to integer
+        employee_id: employeeForm.employee_id.toUpperCase(), // Ensure uppercase
+      };
+      
+      // Remove null/empty optional fields
+      if (!formData.pf_number?.trim()) delete formData.pf_number;
+      if (!formData.health_card_no?.trim()) delete formData.health_card_no;
+      if (!formData.email?.trim()) delete formData.email;
+      if (!formData.personal_email?.trim()) delete formData.personal_email;
+      if (!formData.password?.trim()) delete formData.password;
+      if (formData.lpa === null || formData.lpa === '') delete formData.lpa;
+      
+      // Handle welcome email logic
       if (!sendWelcomeEmail) {
-        // Don't send email if checkbox is unchecked
         delete formData.personal_email;
         delete formData.password;
       }
+      
+      console.log('Sending employee data:', formData); // Debug log
       
       const response = await employeeAPI.create(formData);
       
@@ -215,7 +284,34 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
       }
     } catch (error: any) {
       console.error('Create employee error:', error);
-      alert(`Failed to create employee: ${error.response?.data?.message || error.message}`);
+      
+      // Enhanced error logging
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      }
+      
+      // Better error message
+      let errorMessage = 'Failed to create employee';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        // Handle Django serializer errors
+        const errorMessages = [];
+        for (const [field, messages] of Object.entries(error.response.data.errors)) {
+          if (Array.isArray(messages)) {
+            errorMessages.push(`${field}: ${messages.join(', ')}`);
+          } else {
+            errorMessages.push(`${field}: ${messages}`);
+          }
+        }
+        errorMessage = errorMessages.join('\n');
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -402,6 +498,16 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
             <Users className="h-4 w-4" />
             Add Employee
           </Button>
+          {onNavigateToWelcomeEmails && (
+            <Button 
+              onClick={onNavigateToWelcomeEmails}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              Welcome Emails
+            </Button>
+          )}
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             {employees.length} Employees

@@ -280,3 +280,44 @@ class ActualSalaryCredited(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.month} {self.year} - ₹{self.actual_salary_credited}"
+
+
+class EmailLog(models.Model):
+    """
+    Model to track email sending history.
+    """
+    EMAIL_TYPE_CHOICES = [
+        ('WELCOME', 'Welcome Email'),
+        ('PAYSLIP', 'Payslip Email'),
+        ('BULK_WELCOME', 'Bulk Welcome Email'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('SENT', 'Sent'),
+        ('FAILED', 'Failed'),
+    ]
+
+    employee = models.ForeignKey(
+        Employee, 
+        on_delete=models.CASCADE,
+        related_name='email_logs',
+        null=True,
+        blank=True
+    )
+    email_type = models.CharField(max_length=20, choices=EMAIL_TYPE_CHOICES)
+    recipient_email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    message = models.TextField(blank=True, null=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    error_message = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'email_logs'
+        verbose_name = 'Email Log'
+        verbose_name_plural = 'Email Logs'
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"{self.email_type} to {self.recipient_email} - {self.status}"

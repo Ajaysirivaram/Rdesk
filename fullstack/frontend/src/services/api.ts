@@ -28,6 +28,19 @@ api.interceptors.response.use(
       // Handle unauthorized access
       window.location.href = '/login';
     }
+    
+    // Enhanced error logging
+    console.error('API Error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        data: error.config?.data
+      }
+    });
+    
     return Promise.reject(error);
   }
 );
@@ -60,6 +73,29 @@ export const employeeAPI = {
     api.get(`/employees/?department=${departmentId}`),
   sendWelcomeEmail: (employeeId: string) => 
     api.post(`/employees/${employeeId}/send-welcome-email/`),
+  sendBulkWelcomeEmails: (employeeIds: string[]) => 
+    api.post('/employees/send-bulk-welcome-emails/', { employee_ids: employeeIds }),
+  sendWelcomeEmailWithCredentials: (employeeId: string, credentials: { personal_email?: string; password?: string }) => 
+    api.post(`/employees/${employeeId}/send-welcome-email-with-credentials/`, credentials),
+  getEmployeesForWelcomeEmail: () => 
+    api.get('/employees/welcome-email-employees/'),
+  getEmailLogs: (params?: { email_type?: string; status?: string; employee_id?: string; limit?: number }) => 
+    api.get('/employees/email-logs/', { params }),
+  processWelcomeEmailExcel: (file: File | null, manualData?: any) => {
+    const formData = new FormData();
+    if (file) {
+      formData.append('file', file);
+    } else if (manualData) {
+      for (const key in manualData) {
+        formData.append(key, manualData[key]);
+      }
+    }
+    return api.post('/employees/process-welcome-email-excel/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export const monthlySalaryAPI = {

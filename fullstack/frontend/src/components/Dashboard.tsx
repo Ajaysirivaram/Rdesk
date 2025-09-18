@@ -18,6 +18,7 @@ import {
 
 // Import components
 import EmployeeManagement from './EmployeeManagement';
+import WelcomeEmailManagement from './WelcomeEmailManagement';
 import BulkEmployeeSelector from './BulkEmployeeSelector';
 import PeriodSelector from './PeriodSelector';
 import SalaryMethodSelector from './SalaryMethodSelector';
@@ -89,7 +90,7 @@ const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="generate" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Generate Payslips
@@ -105,6 +106,10 @@ const Dashboard: React.FC = () => {
             <TabsTrigger value="employees" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Manage Employees
+            </TabsTrigger>
+            <TabsTrigger value="welcome-emails" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Welcome Emails
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -272,6 +277,14 @@ const Dashboard: React.FC = () => {
           <TabsContent value="employees">
             <EmployeeManagement 
               onNavigateToUpload={() => setActiveTab('upload')}
+              onNavigateToWelcomeEmails={() => setActiveTab('welcome-emails')}
+            />
+          </TabsContent>
+
+          {/* Welcome Emails Tab */}
+          <TabsContent value="welcome-emails">
+            <WelcomeEmailManagement 
+              onNavigateBack={() => setActiveTab('employees')}
             />
           </TabsContent>
 

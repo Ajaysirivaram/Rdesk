@@ -90,6 +90,10 @@ tmp/
 *.xlsx
 *.xls
 
+# Test data files
+*testset*.csv
+*validation-set*.csv
+
 # Logs
 logs/
 *.log
