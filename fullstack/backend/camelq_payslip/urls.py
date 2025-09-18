@@ -18,15 +18,33 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+
+def api_root(request):
+    """API root endpoint that lists available endpoints"""
+    return JsonResponse({
+        'message': 'CamelQ Payslip Management System API',
+        'version': '1.0',
+        'endpoints': {
+            'authentication': '/api/auth/',
+            'departments': '/api/departments/',
+            'employees': '/api/employees/',
+            'payslips': '/api/payslips/',
+            'admin': '/admin/',
+        }
+    })
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    
+    # API Root
+    path("api/", api_root, name="api-root"),
     
     # API URLs
     path("api/auth/", include("authentication.urls")),
     path("api/departments/", include("departments.urls")),
     path("api/employees/", include("employees.urls")),
-    path("api/", include("payslip_generation.urls")),
+    path("api/payslips/", include("payslip_generation.urls")),
 ]
 
 # Serve media files in development
