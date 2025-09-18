@@ -15,13 +15,8 @@ export default defineConfig({
     tempo(),
   ],
   resolve: {
-    preserveSymlinks: true,
     alias: {
-      "@": path.resolve((() => {
-        // __dirname is not available in ESM; compute it from import.meta.url
-        const __dirname = path.dirname(fileURLToPath(import.meta.url));
-        return __dirname;
-      })(), "./src"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   server: {

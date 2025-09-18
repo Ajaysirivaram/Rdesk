@@ -7,7 +7,7 @@
     "skipLibCheck": true,
     "noEmitOnError": false,
 
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "baseUrl": ".",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
