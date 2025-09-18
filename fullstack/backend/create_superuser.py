@@ -24,6 +24,9 @@ def create_superuser():
     # Check if superuser already exists
     if User.objects.filter(is_superuser=True).exists():
         print("Superuser already exists!")
+        # Try to get the existing superuser
+        existing_user = User.objects.filter(is_superuser=True).first()
+        print(f"Existing superuser: {existing_user.username}")
         return
     
     # Create superuser
@@ -32,6 +35,9 @@ def create_superuser():
     password = 'admin123'  # Change this to a secure password
     
     try:
+        # Delete existing admin user if exists
+        User.objects.filter(username=username).delete()
+        
         user = User.objects.create_superuser(
             username=username,
             email=email,
@@ -41,9 +47,21 @@ def create_superuser():
         print(f"Username: {username}")
         print(f"Email: {email}")
         print(f"Password: {password}")
-        print(f"Admin URL: https://your-backend-url.up.railway.app/admin/")
+        print(f"Admin URL: https://web-production-5f64c.up.railway.app/admin/")
     except Exception as e:
         print(f"Error creating superuser: {e}")
+        # Try to create a regular user first
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                is_staff=True,
+                is_superuser=True
+            )
+            print(f"Superuser created as regular user!")
+        except Exception as e2:
+            print(f"Failed to create user: {e2}")
 
 if __name__ == "__main__":
     create_superuser()
