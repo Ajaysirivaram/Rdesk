@@ -1,7 +1,8 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "cd fullstack/backend && pip install -r requirements.txt"
   },
   "deploy": {
     "startCommand": "cd fullstack/backend && python manage.py migrate && gunicorn camelq_payslip.wsgi --bind 0.0.0.0:$PORT",
