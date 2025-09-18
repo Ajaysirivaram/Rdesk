@@ -21,5 +21,5 @@ COPY . .
 # Set working directory to backend
 WORKDIR /app/fullstack/backend
 
-# Run migrations and start server
-CMD python manage.py migrate && gunicorn camelq_payslip.wsgi --bind 0.0.0.0:$PORT
+# Run migrations, create departments, and start server
+CMD python manage.py migrate && python manage.py create_sample_departments && gunicorn camelq_payslip.wsgi --bind 0.0.0.0:$PORT
