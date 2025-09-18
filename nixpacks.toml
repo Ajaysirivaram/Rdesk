@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["python311", "pip"]
+
+[phases.install]
+cmds = ["cd fullstack/backend && pip install -r requirements.txt"]
+
+[start]
+cmd = "cd fullstack/backend && python manage.py migrate && python create_admin.py && python check_admin.py && gunicorn camelq_payslip.wsgi --bind 0.0.0.0:$PORT"
+
+[providers]
+python = "3.11"
