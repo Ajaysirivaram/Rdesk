@@ -18,6 +18,7 @@ from .serializers import (
     MonthlySalaryDataSerializer,
     MonthlySalaryUploadSerializer
 )
+from .email_service import EmployeeEmailService
 from departments.models import Department
 
 
@@ -290,7 +291,6 @@ def import_excel(request):
                     # Send welcome email if both personal_email and password are provided
                     if employee.personal_email and employee.password:
                         try:
-                            from .email_service import EmployeeEmailService
                             email_service = EmployeeEmailService()
                             success, message = email_service.send_welcome_email(employee)
                             
@@ -832,7 +832,6 @@ def send_welcome_email(request, pk):
                 'message': 'Employee has no password set'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(employee)
         
@@ -876,7 +875,6 @@ def send_bulk_welcome_emails(request):
                 'message': 'No valid employees found with email and password'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         results = email_service.send_bulk_welcome_emails(employees)
         
@@ -927,7 +925,6 @@ def send_welcome_email_with_credentials(request, pk):
             employee_id=employee.employee_id
         )
         
-        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(temp_employee)
         
@@ -1088,7 +1085,6 @@ def process_welcome_email_excel(request):
         emails_sent = 0
         errors = []
         
-        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         
         for index, row in df.iterrows():
@@ -1243,7 +1239,6 @@ def test_welcome_email_simple(request):
         )
         
         # Send email
-        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(test_employee)
         
@@ -1257,4 +1252,38 @@ def test_welcome_email_simple(request):
         return Response({
             'success': False,
             'message': f'Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def test_email_logging(request):
+    """
+    Test endpoint to check if email logging is working.
+    """
+    try:
+        # Create a test email log entry
+        test_log = EmailLog.objects.create(
+            employee=None,
+            email_type='WELCOME',
+            recipient_email='test@example.com',
+            subject='Test Email Log',
+            status='SENT',
+            message='This is a test email log entry'
+        )
+        
+        # Get total email logs count
+        total_logs = EmailLog.objects.count()
+        
+        return Response({
+            'success': True,
+            'message': 'Email logging test successful',
+            'test_log_id': test_log.id,
+            'total_logs': total_logs
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Email logging test failed: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -32,6 +32,7 @@ urlpatterns = [
     path('<int:pk>/send-welcome-email-with-credentials/', views.send_welcome_email_with_credentials, name='send-welcome-email-with-credentials'),
     path('welcome-email-employees/', views.get_employees_for_welcome_email, name='get-employees-for-welcome-email'),
     path('email-logs/', views.get_email_logs, name='get-email-logs'),
+    path('test-email-logging/', views.test_email_logging, name='test-email-logging'),
     path('process-welcome-email-excel/', views.process_welcome_email_excel, name='process-welcome-email-excel'),
     path('test-welcome-email/', views.test_welcome_email_simple, name='test-welcome-email-simple'),
 ]
