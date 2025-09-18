@@ -122,6 +122,18 @@ const Login: React.FC = () => {
                 'Sign In'
               )}
             </Button>
+
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => navigate('/register')}
+                className="text-sm"
+                disabled={isLoading}
+              >
+                Don't have an account? Register here
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

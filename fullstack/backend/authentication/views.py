@@ -15,6 +15,66 @@ User = get_user_model()
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @csrf_exempt
+def register_view(request):
+    """
+    User registration endpoint.
+    """
+    username = request.data.get('username')
+    email = request.data.get('email')
+    password = request.data.get('password')
+    full_name = request.data.get('full_name')
+    
+    if not all([username, email, password, full_name]):
+        return Response({
+            'success': False,
+            'message': 'Username, email, password, and full name are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if user already exists
+    if User.objects.filter(username=username).exists():
+        return Response({
+            'success': False,
+            'message': 'Username already exists'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if User.objects.filter(email=email).exists():
+        return Response({
+            'success': False,
+            'message': 'Email already exists'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Create new user
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            full_name=full_name,
+            is_active=True
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'User registered successfully',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'is_active': user.is_active
+            }
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Registration failed: {str(e)}'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
 def login_view(request):
     """
     Admin login endpoint.

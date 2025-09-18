@@ -3,6 +3,7 @@ import { useRoutes, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./components/Login";
+import Register from "./components/Register";
 import Home from "./components/home";
 import routes from "tempo-routes";
 
@@ -19,6 +20,7 @@ function App() {
         <>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route 
               path="/" 
               element={
