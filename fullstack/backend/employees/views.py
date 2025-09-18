@@ -1275,6 +1275,9 @@ def test_welcome_email_simple(request):
             lpa=5.0  # 5 LPA
         )
         
+        # Save the employee first
+        test_employee.save()
+        
         # Test email service
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(test_employee)
