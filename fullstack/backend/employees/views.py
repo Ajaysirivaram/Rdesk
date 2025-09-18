@@ -927,6 +927,12 @@ def send_welcome_email_with_credentials(request, pk):
             department=employee.department,
             position=employee.position,
             doj=employee.doj,
+            dob=employee.dob,
+            pan=employee.pan,
+            bank_account=employee.bank_account,
+            bank_ifsc=employee.bank_ifsc,
+            location=employee.location,
+            pay_mode=employee.pay_mode,
             annual_ctc=employee.annual_ctc
         )
         
@@ -1250,7 +1256,7 @@ def test_welcome_email_simple(request):
                 'message': 'No departments available. Please create a department first.'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create test employee
+        # Create test employee with all required fields
         test_employee = Employee(
             name="Test Employee",
             employee_id="TEST001",
@@ -1260,6 +1266,12 @@ def test_welcome_email_simple(request):
             department=department,
             position="Test Position",
             doj=timezone.now().date(),
+            dob=timezone.now().date(),  # Required field
+            pan="ABCDE1234F",  # Required field
+            bank_account="1234567890",  # Required field
+            bank_ifsc="SBIN0001234",  # Required field
+            location="Test Location",  # Required field
+            pay_mode="NEFT",  # Required field
             annual_ctc=500000
         )
         
