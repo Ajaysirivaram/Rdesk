@@ -90,3 +90,53 @@ def check_departments(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def create_sample_departments_api(request):
+    """
+    Create sample departments via API.
+    """
+    try:
+        departments_data = [
+            {'department_code': 'IT', 'department_name': 'Information Technology', 'description': 'Software development and IT support'},
+            {'department_code': 'HR', 'department_name': 'Human Resources', 'description': 'Human resources and employee management'},
+            {'department_code': 'FIN', 'department_name': 'Finance', 'description': 'Financial management and accounting'},
+            {'department_code': 'MKT', 'department_name': 'Marketing', 'description': 'Marketing and business development'},
+            {'department_code': 'OPS', 'department_name': 'Operations', 'description': 'Operations and project management'},
+            {'department_code': 'SALES', 'department_name': 'Sales', 'description': 'Sales and customer relations'},
+        ]
+        
+        created_count = 0
+        created_departments = []
+        
+        for dept_data in departments_data:
+            department, created = Department.objects.get_or_create(
+                department_code=dept_data['department_code'],
+                defaults={
+                    'department_name': dept_data['department_name'],
+                    'description': dept_data['description'],
+                    'is_active': True
+                }
+            )
+            if created:
+                created_count += 1
+                created_departments.append({
+                    'id': department.id,
+                    'code': department.department_code,
+                    'name': department.department_name
+                })
+        
+        return Response({
+            'success': True,
+            'message': f'Created {created_count} new departments',
+            'created_departments': created_departments,
+            'total_departments': Department.objects.filter(is_active=True).count()
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
