@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 Starting Camel-Q Payslip System
+echo 🚀 Starting RothDesk Payslip System
 echo ==================================
 
 echo.

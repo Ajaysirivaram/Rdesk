@@ -2,7 +2,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import { tempo } from "tempo-devtools/dist/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,16 +11,25 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    tempo(),
   ],
   resolve: {
+    preserveSymlinks: true,
     alias: {
-      "@": path.resolve(path.dirname(fileURLToPath(import.meta.url)), "./src"),
+      "@": path.resolve((() => {
+        // __dirname is not available in ESM; compute it from import.meta.url
+        const __dirname = path.dirname(fileURLToPath(import.meta.url));
+        return __dirname;
+      })(), "./src"),
     },
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
   },
   server: {
     // @ts-ignore
     allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   }
 });

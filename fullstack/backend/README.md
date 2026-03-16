@@ -1,8 +1,8 @@
-# 🚀 Camel-Q Payslip System - Django Backend
+# 🚀 RothDesk Payslip System - Django Backend
 
 ## 📋 Overview
 
-This is the Django backend for the Camel-Q Payslip System, a comprehensive bulk payslip generation system designed to handle 200-500 employees with advanced features including Excel import, bulk generation, progress tracking, and file organization.
+This is the Django backend for the RothDesk Payslip System, a comprehensive bulk payslip generation system designed to handle 200-500 employees with advanced features including Excel import, bulk generation, progress tracking, and file organization.
 
 ## 🏗️ Architecture
 
@@ -17,7 +17,7 @@ This is the Django backend for the Camel-Q Payslip System, a comprehensive bulk 
 
 ```
 backend/
-├── camelq_payslip/          # Main Django project
+├── camelq_payslip/          # Main RothDesk Django project
 │   ├── settings.py          # Django settings
 │   ├── urls.py             # Main URL configuration
 │   ├── celery.py           # Celery configuration
@@ -87,7 +87,7 @@ backend/
    ```bash
    # Create MySQL database
    mysql -u root -p
-   CREATE DATABASE camelq_payslip;
+   CREATE DATABASE rothdesk_payslip;
    
    # Run migrations
    python manage.py makemigrations
@@ -98,7 +98,7 @@ backend/
    ```bash
    python manage.py create_admin
    # Or with custom credentials:
-   python manage.py create_admin --username admin --email admin@camelq.com --password admin123 --full-name "System Administrator"
+   python manage.py create_admin --username admin --email admin@blackroth.com --password admin123 --full-name "System Administrator"
    ```
 
 7. **Start Development Server**
@@ -124,7 +124,7 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database Configuration
-DB_NAME=camelq_payslip
+DB_NAME=rothdesk_payslip
 DB_USER=root
 DB_PASSWORD=your-mysql-password
 DB_HOST=localhost

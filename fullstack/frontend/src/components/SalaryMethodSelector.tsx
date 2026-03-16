@@ -1,3 +1,7 @@
+/**
+ * Component: components\SalaryMethodSelector.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React from 'react';
 import { SalaryMethod } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -111,3 +115,4 @@ const SalaryMethodSelector: React.FC<SalaryMethodSelectorProps> = ({
 };
 
 export default SalaryMethodSelector;
+

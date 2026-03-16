@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\navigation-menu.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { ChevronDownIcon } from "@radix-ui/react-icons"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
@@ -126,3 +130,4 @@ export {
   NavigationMenuIndicator,
   NavigationMenuViewport,
 }
+

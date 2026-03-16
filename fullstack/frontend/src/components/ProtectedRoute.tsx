@@ -1,3 +1,7 @@
+/**
+ * Component: components\ProtectedRoute.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { ReactNode } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -5,9 +9,10 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  allowEmployee?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowEmployee = false }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -22,6 +27,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!isAuthenticated) {
+    if (allowEmployee) {
+      const userType = localStorage.getItem('userType');
+      const userId = localStorage.getItem('userId');
+      if (userType === 'employee' && userId) {
+        return <>{children}</>;
+      }
+    }
     return <Navigate to="/login" replace />;
   }
 
@@ -29,3 +41,4 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 };
 
 export default ProtectedRoute;
+

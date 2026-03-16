@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\switch.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import * as SwitchPrimitives from "@radix-ui/react-switch"
 
@@ -25,3 +29,4 @@ const Switch = React.forwardRef<
 Switch.displayName = SwitchPrimitives.Root.displayName
 
 export { Switch }
+

@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\calendar.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons"
 import { DayPicker } from "react-day-picker"
@@ -68,3 +72,4 @@ function Calendar({
 Calendar.displayName = "Calendar"
 
 export { Calendar }
+

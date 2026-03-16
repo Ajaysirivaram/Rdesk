@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\input.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -23,3 +27,4 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input"
 
 export { Input }
+

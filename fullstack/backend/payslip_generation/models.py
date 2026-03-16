@@ -55,10 +55,24 @@ class Payslip(models.Model):
     pdf_path = models.CharField(max_length=255)
     qr_code_data = models.TextField()
     
+    # Release Information
+    is_released = models.BooleanField(
+        default=False,
+        help_text="Whether payslip is released and visible to employee"
+    )
+    released_at = models.DateTimeField(null=True, blank=True)
+    released_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='released_payslips'
+    )
+    
     # Metadata
     generated_at = models.DateTimeField(auto_now_add=True)
     generated_by = models.ForeignKey(
-        User, 
+        User,
         on_delete=models.CASCADE,
         related_name='generated_payslips'
     )

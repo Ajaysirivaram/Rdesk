@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\scroll-area.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
@@ -44,3 +48,4 @@ const ScrollBar = React.forwardRef<
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName
 
 export { ScrollArea, ScrollBar }
+

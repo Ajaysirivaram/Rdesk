@@ -2,74 +2,56 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import check_password, identify_hasher, make_password
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth import get_user_model
+from django.db.models import Q
+from employees.models import Employee
 
 User = get_user_model()
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-@csrf_exempt
-def register_view(request):
+def _resolve_admin_role(user):
     """
-    User registration endpoint.
+    Derive role for frontend redirects.
+    Priority: group-based role, then username hint, then default admin.
     """
-    username = request.data.get('username')
-    email = request.data.get('email')
-    password = request.data.get('password')
-    full_name = request.data.get('full_name')
-    
-    if not all([username, email, password, full_name]):
-        return Response({
-            'success': False,
-            'message': 'Username, email, password, and full name are required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Check if user already exists
-    if User.objects.filter(username=username).exists():
-        return Response({
-            'success': False,
-            'message': 'Username already exists'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    if User.objects.filter(email=email).exists():
-        return Response({
-            'success': False,
-            'message': 'Email already exists'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
+    group_names = {group.name.lower() for group in user.groups.all()}
+    if 'ceo' in group_names or user.username.lower() == 'ceo':
+        return 'ceo'
+    if 'hr' in group_names:
+        return 'hr'
+    return 'admin'
+
+
+def _is_hashed_password(value: str | None) -> bool:
+    if not value:
+        return False
     try:
-        # Create new user
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            full_name=full_name,
-            is_active=True
-        )
-        
-        return Response({
-            'success': True,
-            'message': 'User registered successfully',
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'full_name': user.full_name,
-                'is_active': user.is_active
-            }
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'message': f'Registration failed: {str(e)}'
-        }, status=status.HTTP_400_BAD_REQUEST)
+        identify_hasher(value)
+        return True
+    except Exception:
+        return False
+
+
+def _verify_employee_password(employee: Employee, raw_password: str) -> bool:
+    stored = employee.password
+    if not stored:
+        return False
+
+    if _is_hashed_password(stored):
+        return check_password(raw_password, stored)
+
+    # Legacy plaintext compatibility
+    if stored == raw_password:
+        employee.password = make_password(raw_password)
+        employee.save(update_fields=['password', 'updated_at'])
+        return True
+
+    return False
 
 
 @api_view(['POST'])
@@ -77,31 +59,45 @@ def register_view(request):
 @csrf_exempt
 def login_view(request):
     """
-    Admin login endpoint.
+    Unified login endpoint.
+    Supports:
+    - Admin users (AdminUser model)
+    - Employees (Employee model) using employee ID or official email
     """
-    username = request.data.get('username')
+    username = request.data.get('username') or request.data.get('email') or request.data.get('employee_id')
     password = request.data.get('password')
     
     if not username or not password:
         return Response({
             'success': False,
-            'message': 'Username and password are required'
+            'message': 'Email/Employee ID and password are required'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
-    user = authenticate(request, username=username, password=password)
+
+    login_username = username
+    if '@' in username:
+        matched_user = User.objects.filter(email__iexact=username).first()
+        if matched_user:
+            login_username = matched_user.username
+
+    user = authenticate(request, username=login_username, password=password)
     
     if user is not None:
         if user.is_active:
             login(request, user)
+            request.session['admin_id'] = user.id
+            request.session.pop('employee_id', None)
+            role = _resolve_admin_role(user)
             return Response({
                 'success': True,
                 'message': 'Login successful',
+                'role': role,
                 'user': {
                     'id': user.id,
                     'username': user.username,
                     'email': user.email,
                     'full_name': user.full_name,
-                    'is_active': user.is_active
+                    'is_active': user.is_active,
+                    'role': role
                 }
             }, status=status.HTTP_200_OK)
         else:
@@ -109,11 +105,63 @@ def login_view(request):
                 'success': False,
                 'message': 'Account is inactive'
             }, status=status.HTTP_400_BAD_REQUEST)
-    else:
+
+    # Employee login fallback
+    try:
+        employee = Employee.objects.get(
+            Q(employee_id__iexact=username) | Q(email__iexact=username)
+        )
+    except Employee.DoesNotExist:
         return Response({
             'success': False,
-            'message': 'Invalid username or password'
+            'message': 'Invalid credentials'
         }, status=status.HTTP_401_UNAUTHORIZED)
+    except Employee.MultipleObjectsReturned:
+        employee = Employee.objects.filter(
+            Q(employee_id__iexact=username) | Q(email__iexact=username)
+        ).order_by('id').first()
+
+    if not _verify_employee_password(employee, password):
+        return Response({
+            'success': False,
+            'message': 'Invalid credentials'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+    if not employee.is_active:
+        return Response({
+            'success': False,
+            'message': 'Account is inactive'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    if not employee.account_activated:
+        return Response({
+            'success': False,
+            'message': 'Account not activated. Please use your invitation link first.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    request.session['employee_id'] = employee.id
+    request.session.pop('admin_id', None)
+
+    if not employee.onboarding_completed:
+        return Response({
+            'success': False,
+            'message': 'Please complete onboarding first.',
+            'requires_onboarding': True,
+            'employee_id': employee.id
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'success': True,
+        'message': 'Login successful',
+        'role': 'employee',
+        'user': {
+            'id': employee.id,
+            'name': employee.name,
+            'email': employee.email,
+            'employee_id': employee.employee_id,
+            'role': 'employee'
+        }
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -123,6 +171,8 @@ def logout_view(request):
     """
     Admin logout endpoint.
     """
+    request.session.pop('admin_id', None)
+    request.session.pop('employee_id', None)
     logout(request)
     return Response({
         'success': True,
@@ -137,12 +187,14 @@ def profile_view(request):
     Get current user profile.
     """
     user = request.user
+    role = _resolve_admin_role(user)
     return Response({
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'full_name': user.full_name,
         'is_active': user.is_active,
+        'role': role,
         'created_at': user.created_at,
         'updated_at': user.updated_at
     }, status=status.HTTP_200_OK)
@@ -155,6 +207,7 @@ def update_profile_view(request):
     Update current user profile.
     """
     user = request.user
+    role = _resolve_admin_role(user)
     
     # Update allowed fields
     if 'full_name' in request.data:
@@ -173,7 +226,8 @@ def update_profile_view(request):
             'username': user.username,
             'email': user.email,
             'full_name': user.full_name,
-            'is_active': user.is_active
+            'is_active': user.is_active,
+            'role': role
         }
     }, status=status.HTTP_200_OK)
 

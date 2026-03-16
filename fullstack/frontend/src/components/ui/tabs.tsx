@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\tabs.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
 

@@ -1,4 +1,4 @@
-Welcome to CamelQ Software Solutions Pvt. Ltd.
+Welcome to BlackRoth Software Solutions Pvt. Ltd.
 
 Dear {{ employee_name }},
 
@@ -20,5 +20,5 @@ If you have any issues logging in, please don't hesitate to reach out to our HR 
 
 Best regards,
 HR Department
-CamelQ Software Solutions Pvt. Ltd.
+BlackRoth Software Solutions Pvt. Ltd.
 {{ company_address }}

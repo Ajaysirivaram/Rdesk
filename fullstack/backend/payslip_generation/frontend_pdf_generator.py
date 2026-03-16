@@ -143,7 +143,7 @@ class FrontendPDFGenerator:
                 }}
                 
                                  body {{
-                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                     font-family: 'Droid Serif', serif;
                      line-height: 1.3;
                      color: #333;
                      background: white;
@@ -338,10 +338,10 @@ class FrontendPDFGenerator:
                 <!-- Header -->
                 <div class="header">
                     <div class="logo">
-                        <img src="data:image/png;base64,{self._get_logo_base64()}" alt="CamelQ Logo" />
+                        <img src="data:image/png;base64,{self._get_logo_base64()}" alt="RothDesk Logo" />
                     </div>
                     <div class="company-info">
-                        <h1>CamelQ Software Solutions Pvt. Ltd.</h1>
+                        <h1>BlackRoth Software Solutions Pvt. Ltd.</h1>
                         <p>13th FLOOR, MANJEERA TRINITY CORPORATE, JNTU - HITECH CITY ROAD, 3/d PHASE, KPHB, KUKATPALLY, HYDERABAD - 500072</p>
                         <p style="margin-top: 4px; font-weight: 600;">Payslip for the Month of {payslip.pay_period_month} {payslip.pay_period_year}</p>
                     </div>
@@ -455,9 +455,9 @@ class FrontendPDFGenerator:
                 <div class="footer">
                     <p><strong>Dear Associate</strong>,</p>
                     <p>
-                        We thank you for being part of CamelQ family! Help others looking for jobs – Ask your friends & family to visit our nearest CamelQ office to submit their resume or email <strong>jobs@camelQ.com</strong>.
+                        We thank you for being part of RothDesk family! Help others looking for jobs – Ask your friends & family to visit our nearest BlackRoth office to submit their resume or email <strong>jobs@blackroth.com</strong>.
                     </p>
-                    <p>For queries, mail to <strong>info@camelQ.com</strong></p>
+                    <p>For queries, mail to <strong>info@blackroth.com</strong></p>
                 </div>
                 
                 <p class="signature-note">
@@ -525,7 +525,7 @@ class FrontendPDFGenerator:
         except:
             font = None
         
-        text = "CAMELQ"
+        text = "ROTHDESK"
         bbox = draw.textbbox((0, 0), text, font=font)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]

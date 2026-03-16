@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\menubar.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import {
   CheckIcon,
@@ -236,3 +240,4 @@ export {
   MenubarSub,
   MenubarShortcut,
 }
+

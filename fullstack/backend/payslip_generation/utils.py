@@ -109,9 +109,9 @@ class PayslipPDFGenerator:
     def _create_company_header(self):
         """Create company header section."""
         return [
-            Paragraph("CAMELQ SOFTWARE SOLUTIONS PVT LTD", self.styles['CompanyHeader']),
+            Paragraph("BLACKROTH SOFTWARE SOLUTIONS PVT LTD", self.styles['CompanyHeader']),
             Paragraph("13th FLOOR, MANJEERA TRINITY CORPORATE, JNTU - HITECH CITY ROAD, 3/d PHASE, KPHB, KUKATPALLY, HYDERABAD - 500072", self.styles['Normal']),
-            Paragraph("Tel: +91-40-12345678 | Email: info@camelq.com", self.styles['Normal']),
+            Paragraph("Tel: +91-40-12345678 | Email: info@blackroth.com", self.styles['Normal']),
         ]
     
     def _create_payslip_title(self, payslip):
@@ -294,7 +294,7 @@ class PayslipFileManager:
         month = payslip.pay_period_month
         year = payslip.pay_period_year
         employee_name = payslip.employee.name
-        company_name = getattr(settings, 'COMPANY_NAME', 'Camelq Software Solutions')
+        company_name = getattr(settings, 'COMPANY_NAME', 'BlackRoth Software Solutions')
         hr_contact = getattr(settings, 'HR_CONTACT', settings.DEFAULT_FROM_EMAIL)
 
         subject = f"Payslip for {month} {year}"

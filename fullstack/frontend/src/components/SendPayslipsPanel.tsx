@@ -1,3 +1,7 @@
+/**
+ * Component: components\SendPayslipsPanel.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useEffect, useMemo, useState } from 'react';
 import { payslipAPI } from '@/services/api';
 
@@ -131,6 +135,7 @@ export default function SendPayslipsPanel() {
     </div>
   );
 }
+
 
 
 

@@ -1,15 +1,20 @@
 import pandas as pd
 import io
 import logging
+import secrets
+import string
 from decimal import Decimal
 from rest_framework import status, generics, filters
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from django.conf import settings
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.db import transaction, models
-from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password
+from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Employee, SalaryStructure, MonthlySalaryData, ActualSalaryCredited, EmailLog
 from .serializers import (
@@ -19,29 +24,236 @@ from .serializers import (
     MonthlySalaryDataSerializer,
     MonthlySalaryUploadSerializer
 )
-from .email_service import EmployeeEmailService
 from departments.models import Department
+
+
+def _resolve_admin_role(user):
+    """Mirror frontend role expectations from group/username."""
+    group_names = {group.name.lower() for group in user.groups.all()}
+    if 'ceo' in group_names or str(user.username).lower() == 'ceo':
+        return 'ceo'
+    if 'hr' in group_names:
+        return 'hr'
+    return 'admin'
+
+
+def _generate_secure_temp_password(length: int = 12) -> str:
+    alphabet = string.ascii_letters + string.digits + '@#$%&*!?'
+    while True:
+        candidate = ''.join(secrets.choice(alphabet) for _ in range(length))
+        if (
+            any(ch.islower() for ch in candidate)
+            and any(ch.isupper() for ch in candidate)
+            and any(ch.isdigit() for ch in candidate)
+            and any(ch in '@#$%&*!?' for ch in candidate)
+        ):
+            return candidate
+
+
+def _build_password_reset_email(employee: Employee, plain_password: str) -> tuple[str, str]:
+    subject = 'Your RothDesk Account Password Reset'
+    body = (
+        f'Hello {employee.name},\n\n'
+        'Your account password has been reset.\n\n'
+        f'Login Email: {employee.email}\n'
+        f'Temporary Password: {plain_password}\n\n'
+        'Please login and change your password after first login.\n\n'
+        'Login URL:\n'
+        'https://rothdesk.blackroth.in/login\n\n'
+        'Regards\n'
+        'RothDesk HR Team'
+    )
+    return subject, body
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def regenerate_employee_password(request, pk):
+    """
+    Regenerate an employee password in either:
+    - view mode: returns plain password once
+    - mail mode: emails password to employee
+    """
+    role = _resolve_admin_role(request.user)
+    if role not in {'admin', 'hr', 'ceo'}:
+        return Response({
+            'status': 'error',
+            'message': 'Only Admin/HR can regenerate employee passwords.'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    mode = str(request.data.get('mode', '')).strip().lower()
+    if mode not in {'view', 'mail'}:
+        return Response({
+            'status': 'error',
+            'message': 'mode must be either "view" or "mail".'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    employee = get_object_or_404(Employee, pk=pk, is_active=True)
+    if not employee.email:
+        return Response({
+            'status': 'error',
+            'message': 'Employee does not have a login email configured.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    plain_password = _generate_secure_temp_password()
+    hashed_password = make_password(plain_password)
+    now = timezone.now()
+
+    if mode == 'view':
+        previous_account_activated = employee.account_activated
+        previous_account_activated_at = employee.account_activated_at
+        employee.password = hashed_password
+        employee.password_changed = False
+        employee.password_set_date = now
+        employee.account_activated = True
+        employee.account_activated_at = employee.account_activated_at or now
+        employee.save(
+            update_fields=[
+                'password',
+                'password_changed',
+                'password_set_date',
+                'account_activated',
+                'account_activated_at',
+                'updated_at',
+            ]
+        )
+
+        logging.getLogger('employees').info(
+            'Password regenerated in VIEW mode for employee_id=%s by user=%s role=%s (activated_before=%s)',
+            employee.employee_id,
+            request.user.username,
+            role,
+            previous_account_activated,
+        )
+
+        return Response({
+            'status': 'success',
+            'password': plain_password
+        }, status=status.HTTP_200_OK)
+
+    previous_password = employee.password
+    previous_password_changed = employee.password_changed
+    previous_password_set_date = employee.password_set_date
+    previous_account_activated = employee.account_activated
+    previous_account_activated_at = employee.account_activated_at
+
+    employee.password = hashed_password
+    employee.password_changed = False
+    employee.password_set_date = now
+    employee.account_activated = True
+    employee.account_activated_at = employee.account_activated_at or now
+    employee.save(
+        update_fields=[
+            'password',
+            'password_changed',
+            'password_set_date',
+            'account_activated',
+            'account_activated_at',
+            'updated_at',
+        ]
+    )
+
+    subject, body = _build_password_reset_email(employee, plain_password)
+    try:
+        send_mail(
+            subject,
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [employee.email],
+            fail_silently=False,
+        )
+    except Exception as exc:
+        # Revert to previous password if mail fails, so employee is not locked out.
+        employee.password = previous_password
+        employee.password_changed = previous_password_changed
+        employee.password_set_date = previous_password_set_date
+        employee.account_activated = previous_account_activated
+        employee.account_activated_at = previous_account_activated_at
+        employee.save(
+            update_fields=[
+                'password',
+                'password_changed',
+                'password_set_date',
+                'account_activated',
+                'account_activated_at',
+                'updated_at',
+            ]
+        )
+
+        logging.getLogger('employees').error(
+            'Password regeneration MAIL mode failed for employee_id=%s by user=%s: %s',
+            employee.employee_id,
+            request.user.username,
+            str(exc),
+        )
+        return Response({
+            'status': 'error',
+            'message': 'Failed to send password reset email.'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    logging.getLogger('employees').info(
+        'Password regenerated in MAIL mode for employee_id=%s by user=%s role=%s (activated_before=%s)',
+        employee.employee_id,
+        request.user.username,
+        role,
+        previous_account_activated,
+    )
+
+    return Response({
+        'status': 'success',
+        'message': 'Password generated and emailed to employee'
+    }, status=status.HTTP_200_OK)
 
 
 class EmployeeListCreateView(generics.ListCreateAPIView):
     """
     List all employees or create a new employee.
     """
-    queryset = Employee.objects.filter(is_active=True).select_related('department')
+    queryset = Employee.objects.filter(is_active=True).select_related('department', 'shift')
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['department', 'pay_mode', 'is_active']
+    filterset_fields = ['department', 'pay_mode', 'is_active', 'shift']
     search_fields = ['name', 'employee_id', 'position', 'location']
     ordering_fields = ['name', 'employee_id', 'doj', 'created_at']
     ordering = ['name']
+
+    def create(self, request, *args, **kwargs):
+        """
+        Return clean serializer validation payload for frontend handling.
+        """
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'message': 'Validation failed',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        employee = serializer.save()
+        headers = self.get_success_headers(serializer.data)
+        response_data = self.get_serializer(employee).data
+        reactivated = bool(getattr(serializer, '_reactivated_employee', False))
+        response_data.update({
+            'success': True,
+            'message': (
+                'Employee reactivated and activation invitation sent.'
+                if reactivated
+                else 'Employee created and activation invitation sent.'
+            )
+        })
+        return Response(
+            response_data,
+            status=status.HTTP_200_OK if reactivated else status.HTTP_201_CREATED,
+            headers=headers
+        )
 
 
 class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update or delete an employee.
     """
-    queryset = Employee.objects.all()
+    queryset = Employee.objects.select_related('department', 'shift').all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]
 
@@ -49,6 +261,80 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
         # Soft delete - set is_active to False
         instance.is_active = False
         instance.save()
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_overview(request, pk):
+    """
+    Detailed employee payload with shift history and current-month attendance snapshot.
+    """
+    employee = get_object_or_404(
+        Employee.objects.select_related('department', 'shift'),
+        pk=pk,
+        is_active=True
+    )
+
+    from attendance.models import AttendanceRecord, EmployeeShiftAssignment
+    from attendance.services import generate_monthly_summary
+
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+
+    shift_assignments = (
+        EmployeeShiftAssignment.objects.select_related('shift', 'office_location', 'policy')
+        .filter(employee=employee)
+        .order_by('-effective_from', '-id')[:12]
+    )
+    attendance_rows = (
+        AttendanceRecord.objects.select_related('shift')
+        .filter(employee=employee, date__gte=month_start, date__lte=today)
+        .order_by('-date')[:31]
+    )
+    monthly_summary = generate_monthly_summary(employee, month=today.month, year=today.year)
+
+    return Response({
+        'success': True,
+        'employee': EmployeeSerializer(employee).data,
+        'current_month_summary': {
+            'month': monthly_summary.month,
+            'year': monthly_summary.year,
+            'present_days': monthly_summary.present_days,
+            'late_days': monthly_summary.late_days,
+            'leave_days': monthly_summary.leave_days,
+            'half_days': monthly_summary.half_days,
+            'absent_days': monthly_summary.absent_days,
+            'total_working_hours': monthly_summary.total_working_hours,
+            'overtime_hours': monthly_summary.overtime_hours,
+            'payable_days': monthly_summary.payable_days,
+        },
+        'shift_assignments': [
+            {
+                'id': assignment.id,
+                'shift_id': assignment.shift_id,
+                'shift_name': assignment.shift.name if assignment.shift else None,
+                'office_location': assignment.office_location.name if assignment.office_location else None,
+                'policy': assignment.policy.name if assignment.policy else None,
+                'effective_from': assignment.effective_from,
+                'effective_to': assignment.effective_to,
+                'is_active': assignment.is_active,
+            }
+            for assignment in shift_assignments
+        ],
+        'attendance': [
+            {
+                'id': row.id,
+                'date': row.date,
+                'status': row.status,
+                'punch_in_time': row.punch_in_time,
+                'punch_out_time': row.punch_out_time,
+                'working_hours': row.working_hours,
+                'overtime_hours': row.overtime_hours,
+                'shift_name': row.shift.name if row.shift else None,
+            }
+            for row in attendance_rows
+        ],
+    }, status=status.HTTP_200_OK)
 
 
 class SalaryStructureListCreateView(generics.ListCreateAPIView):
@@ -292,6 +578,7 @@ def import_excel(request):
                     # Send welcome email if both personal_email and password are provided
                     if employee.personal_email and employee.password:
                         try:
+                            from .email_service import EmployeeEmailService
                             email_service = EmployeeEmailService()
                             success, message = email_service.send_welcome_email(employee)
                             
@@ -631,33 +918,49 @@ def get_salary_calculation_preview(request):
         employee_ids = request.GET.getlist('employee_ids')
         month = request.GET.get('month')
         year = int(request.GET.get('year'))
-        
+
+        # DEBUG: Log input parameters
+        print(f"=== DEBUG: Salary Preview API ===")
+        print(f"employee_ids: {employee_ids}")
+        print(f"month: {month}")
+        print(f"year: {year}")
+
         if not employee_ids or not month or not year:
             return Response({
                 'success': False,
                 'message': 'Employee IDs, month, and year are required'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         employees = Employee.objects.filter(
             id__in=employee_ids,
             is_active=True
         ).select_related('department')
-        
+
+        print(f"Found {employees.count()} active employees matching IDs")
+
         preview_data = []
-        
+
         for employee in employees:
+            print(f"Processing employee: {employee.name} (ID: {employee.id}, Employee ID: {employee.employee_id})")
+            print(f"Employee LPA: {employee.lpa}")
+
             # Get monthly salary data
             monthly_salary = MonthlySalaryData.objects.filter(
                 employee=employee,
                 month=month,
                 year=year
             ).first()
-            
+
+            print(f"Monthly salary found: {monthly_salary is not None}")
+            if monthly_salary:
+                print(f"Monthly salary net_pay: {monthly_salary.net_pay}")
+
             if employee.lpa and monthly_salary:
+                print(f"Both LPA and monthly salary exist - including in preview")
                 # Use LPA from employee model (convert to annual amount)
                 lpa_annual = float(employee.lpa) * 100000  # Convert lakhs to rupees
                 calculated_monthly = float(monthly_salary.net_pay)
-                
+
                 preview_data.append({
                     'employee_id': employee.id,
                     'employee_name': employee.name,
@@ -670,7 +973,11 @@ def get_salary_calculation_preview(request):
                     'difference_percentage': abs((calculated_monthly - (lpa_annual / 12)) / (lpa_annual / 12) * 100) if lpa_annual > 0 else 0,
                     'is_nearby': abs(calculated_monthly - (lpa_annual / 12)) <= (lpa_annual / 12 * 0.1)  # Within 10%
                 })
-        
+            else:
+                print(f"Missing data - LPA: {employee.lpa is not None}, Monthly Salary: {monthly_salary is not None}")
+
+        print(f"Final preview_data length: {len(preview_data)}")
+
         return Response({
             'success': True,
             'data': preview_data,
@@ -681,8 +988,9 @@ def get_salary_calculation_preview(request):
                 'year': year
             }
         }, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
+        print(f"Error in salary preview: {str(e)}")
         return Response({
             'success': False,
             'message': f'Error getting salary preview: {str(e)}'
@@ -833,6 +1141,7 @@ def send_welcome_email(request, pk):
                 'message': 'Employee has no password set'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(employee)
         
@@ -876,6 +1185,7 @@ def send_bulk_welcome_emails(request):
                 'message': 'No valid employees found with email and password'
             }, status=status.HTTP_400_BAD_REQUEST)
         
+        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         results = email_service.send_bulk_welcome_emails(employees)
         
@@ -923,19 +1233,10 @@ def send_welcome_email_with_credentials(request, pk):
             email=employee.email,
             personal_email=custom_email,
             password=custom_password,
-            employee_id=employee.employee_id,
-            department=employee.department,
-            position=employee.position,
-            doj=employee.doj,
-            dob=employee.dob,
-            pan=employee.pan,
-            bank_account=employee.bank_account,
-            bank_ifsc=employee.bank_ifsc,
-            location=employee.location,
-            pay_mode=employee.pay_mode,
-            lpa=employee.lpa
+            employee_id=employee.employee_id
         )
         
+        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(temp_employee)
         
@@ -1054,22 +1355,13 @@ def get_email_logs(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])  # Require authentication
+@permission_classes([AllowAny])  # Temporarily allow any for testing
 @csrf_exempt
 def process_welcome_email_excel(request):
     """
     Process Excel file for welcome email sending.
     """
     try:
-        # Add timeout and better error handling
-        import signal
-        
-        def timeout_handler(signum, frame):
-            raise TimeoutError("Request timeout")
-        
-        # Set a timeout for the entire operation
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(25)  # 25 seconds timeout (less than Railway's 30s)
         # Check if it's a file upload or manual form submission
         if 'file' in request.FILES:
             # File upload processing
@@ -1105,6 +1397,7 @@ def process_welcome_email_excel(request):
         emails_sent = 0
         errors = []
         
+        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         
         for index, row in df.iterrows():
@@ -1210,9 +1503,6 @@ def process_welcome_email_excel(request):
             except Exception as e:
                 errors.append(f"Row {index + 1}: {str(e)}")
         
-        # Cancel the timeout
-        signal.alarm(0)
-        
         return Response({
             'success': True,
             'message': f'Processed {processed_count} employees, sent {emails_sent} welcome emails',
@@ -1222,15 +1512,7 @@ def process_welcome_email_excel(request):
             'errors': errors
         }, status=status.HTTP_200_OK)
         
-    except TimeoutError:
-        signal.alarm(0)  # Cancel timeout
-        return Response({
-            'success': False,
-            'message': 'Request timeout - operation took too long'
-        }, status=status.HTTP_408_REQUEST_TIMEOUT)
-        
     except Exception as e:
-        signal.alarm(0)  # Cancel timeout
         return Response({
             'success': False,
             'message': f'Error processing file: {str(e)}'
@@ -1245,89 +1527,116 @@ def test_welcome_email_simple(request):
     Simple test endpoint for welcome email without authentication
     """
     try:
-        # Create a test employee object
-        from departments.models import Department
-        
-        # Get first department or create one
-        department = Department.objects.first()
-        if not department:
-            return Response({
-                'success': False,
-                'message': 'No departments available. Please create a department first.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Create test employee with all required fields
-        test_employee = Employee(
-            name="Test Employee",
-            employee_id="TEST001",
-            email="test@example.com",
-            personal_email=request.data.get('email', 'test@example.com'),
-            password=request.data.get('password', 'test123'),
-            department=department,
-            position="Test Position",
-            doj=timezone.now().date(),
-            dob=timezone.now().date(),  # Required field
-            pan="ABCDE1234F",  # Required field
-            bank_account="1234567890",  # Required field
-            bank_ifsc="SBIN0001234",  # Required field
-            location="Test Location",  # Required field
-            pay_mode="NEFT",  # Required field
-            lpa=5.0  # 5 LPA
+        manual_data = {
+            'name': request.data.get('name', 'Test User'),
+            'personal_email': request.data.get('personal_email', 'test@example.com'),
+            'password': request.data.get('password', 'TestPass123!'),
+            'system_email': request.data.get('system_email', 'test@blackroth.co.in')
+        }
+
+        # Create test employee object
+        class TestEmployee:
+            def __init__(self, name, email, personal_email, password, employee_id):
+                self.name = name
+                self.email = email
+                self.personal_email = personal_email
+                self.password = password
+                self.employee_id = employee_id
+
+        test_employee = TestEmployee(
+            name=manual_data['name'],
+            email=manual_data['system_email'],
+            personal_email=manual_data['personal_email'],
+            password=manual_data['password'],
+            employee_id='TEST001'
         )
-        
-        # Save the employee first
-        test_employee.save()
-        
-        # Test email service
+
+        # Send email
+        from .email_service import EmployeeEmailService
         email_service = EmployeeEmailService()
         success, message = email_service.send_welcome_email(test_employee)
-        
+
         return Response({
             'success': success,
             'message': message,
-            'test_employee': {
-                'name': test_employee.name,
-                'email': test_employee.email,
-                'personal_email': test_employee.personal_email
-            }
-        }, status=status.HTTP_200_OK if success else status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+            'test_data': manual_data
+        }, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({
             'success': False,
-            'message': f'Test failed: {str(e)}'
+            'message': f'Error: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def test_email_logging(request):
+@csrf_exempt
+def send_relieving_letter(request):
     """
-    Test endpoint to check if email logging is working.
+    Send relieving letter and experience letter emails with PDF attachments.
     """
     try:
-        # Create a test email log entry
-        test_log = EmailLog.objects.create(
-            employee=None,
-            email_type='WELCOME',
-            recipient_email='test@example.com',
-            subject='Test Email Log',
-            status='SENT',
-            message='This is a test email log entry'
+        employee_name = request.data.get('employee_name')
+        recipient_email = request.data.get('recipient_email')
+        relieving_letter_file = request.FILES.get('relieving_letter')
+        experience_letter_file = request.FILES.get('experience_letter')
+
+        if not employee_name:
+            return Response({
+                'success': False,
+                'message': 'Employee name is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if not recipient_email:
+            return Response({
+                'success': False,
+                'message': 'Recipient email is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if not relieving_letter_file:
+            return Response({
+                'success': False,
+                'message': 'Relieving letter PDF file is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if not experience_letter_file:
+            return Response({
+                'success': False,
+                'message': 'Experience letter PDF file is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate file types
+        if not relieving_letter_file.name.lower().endswith('.pdf') or not experience_letter_file.name.lower().endswith('.pdf'):
+            return Response({
+                'success': False,
+                'message': 'Only PDF files are allowed for both documents'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate file sizes (max 10MB each)
+        if relieving_letter_file.size > 10 * 1024 * 1024 or experience_letter_file.size > 10 * 1024 * 1024:
+            return Response({
+                'success': False,
+                'message': 'Each file size must be less than 10MB'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Send emails
+        from .email_service import EmployeeEmailService
+        email_service = EmployeeEmailService()
+        success, message = email_service.send_relieving_and_experience_letters(
+            employee_name=employee_name,
+            recipient_email=recipient_email,
+            relieving_letter_file=relieving_letter_file,
+            experience_letter_file=experience_letter_file
         )
-        
-        # Get total email logs count
-        total_logs = EmailLog.objects.count()
-        
+
         return Response({
-            'success': True,
-            'message': 'Email logging test successful',
-            'test_log_id': test_log.id,
-            'total_logs': total_logs
-        }, status=status.HTTP_200_OK)
-        
+            'success': success,
+            'message': message
+        }, status=status.HTTP_200_OK if success else status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     except Exception as e:
         return Response({
             'success': False,
-            'message': f'Email logging test failed: {str(e)}'
+            'message': f'Error: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

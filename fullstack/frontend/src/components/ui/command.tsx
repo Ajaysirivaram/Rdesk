@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\command.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { type DialogProps } from "@radix-ui/react-dialog"
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons"
@@ -151,3 +155,4 @@ export {
   CommandShortcut,
   CommandSeparator,
 }
+

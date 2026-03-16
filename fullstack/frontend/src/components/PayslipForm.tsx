@@ -1,3 +1,7 @@
+/**
+ * Component: components\PayslipForm.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -611,3 +615,4 @@ const PayslipForm: React.FC<PayslipFormProps> = ({
 };
 
 export default PayslipForm;
+

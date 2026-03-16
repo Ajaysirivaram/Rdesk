@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\table.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -118,3 +122,4 @@ export {
   TableCell,
   TableCaption,
 }
+

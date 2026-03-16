@@ -41,13 +41,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const checkAuthStatus = async () => {
+    const hasStoredSession =
+      Boolean(localStorage.getItem('authToken')) ||
+      Boolean(localStorage.getItem('user')) ||
+      Boolean(localStorage.getItem('userType')) ||
+      Boolean(localStorage.getItem('userRole'));
+    const currentPath = window.location.pathname;
+    const isPublicRoute = currentPath === '/login' || currentPath.startsWith('/activate/');
+
+    if (!hasStoredSession && isPublicRoute) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // Skip profile check for employee routes to avoid 403 errors
+    const isEmployeeRoute = currentPath.startsWith('/employee/') && currentPath !== '/employee/login';
+    if (isEmployeeRoute) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await authAPI.getProfile();
       if (response.data) {
         setUser(response.data);
       }
     } catch (error) {
-      console.log('No active session');
+      const status = (error as any)?.response?.status;
+      if (status !== 401 && status !== 403) {
+        console.error('Failed to check auth status:', error);
+      }
       setUser(null);
     } finally {
       setIsLoading(false);

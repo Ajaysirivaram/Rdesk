@@ -1,3 +1,7 @@
+/**
+ * Component: components\GeneratePayslipsButton.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useMemo, useState } from 'react';
 import { payslipAPI, employeeAPI } from '@/services/api';
 
@@ -96,5 +100,6 @@ export default function GeneratePayslipsButton({
     </div>
   );
 }
+
 
 

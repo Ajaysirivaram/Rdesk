@@ -1,3 +1,7 @@
+/**
+ * Component: components\PeriodSelector.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React from 'react';
 import { PayPeriod } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -143,3 +147,4 @@ const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 };
 
 export default PeriodSelector;
+

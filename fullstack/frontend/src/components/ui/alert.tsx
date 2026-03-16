@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\alert.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -57,3 +61,4 @@ const AlertDescription = React.forwardRef<
 AlertDescription.displayName = "AlertDescription"
 
 export { Alert, AlertTitle, AlertDescription }
+

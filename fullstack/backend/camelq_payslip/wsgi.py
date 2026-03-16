@@ -1,5 +1,5 @@
 """
-WSGI config for camelq_payslip project.
+WSGI config for RothDesk Payslip project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

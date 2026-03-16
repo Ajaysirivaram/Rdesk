@@ -1,3 +1,7 @@
+/**
+ * Component: components\Login.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -46,13 +50,13 @@ const Login: React.FC = () => {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4">
             <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-md">
-              <span className="text-primary-foreground font-bold text-3xl">
-                CQ
+              <span className="text-primary-foreground font-bold text-3xl" style={{ fontFamily: '"Droid Serif", serif' }}>
+                RD
               </span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">
-            Camel-Q Payslip System
+          <CardTitle className="text-2xl font-bold text-primary" style={{ fontFamily: '"Droid Serif", serif' }}>
+            RothDesk
           </CardTitle>
           <p className="text-muted-foreground">
             Admin Login
@@ -122,18 +126,6 @@ const Login: React.FC = () => {
                 'Sign In'
               )}
             </Button>
-
-            <div className="text-center">
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => navigate('/register')}
-                className="text-sm"
-                disabled={isLoading}
-              >
-                Don't have an account? Register here
-              </Button>
-            </div>
           </form>
         </CardContent>
       </Card>
@@ -142,3 +134,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+

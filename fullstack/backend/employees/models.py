@@ -1,6 +1,9 @@
 from django.db import models
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, FileExtensionValidator
+from django.utils import timezone
 from departments.models import Department
+import secrets
+import hashlib
 
 
 class Employee(models.Model):
@@ -56,9 +59,17 @@ class Employee(models.Model):
     
     # Additional Information
     location = models.CharField(max_length=100)
+    shift = models.ForeignKey(
+        'attendance.Shift',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='employees',
+        help_text='Currently assigned shift'
+    )
     health_card_no = models.CharField(max_length=50, blank=True, null=True)
-    email = models.EmailField(max_length=255, blank=True, null=True, help_text='Employee email for system login')
-    personal_email = models.EmailField(max_length=255, blank=True, null=True, help_text='Personal email for welcome emails and communication')
+    email = models.CharField(max_length=255, blank=True, null=True, help_text='Employee email for system login')
+    personal_email = models.CharField(max_length=255, blank=True, null=True, help_text='Personal email for welcome emails and communication')
     
     # Login Credentials
     password = models.CharField(
@@ -90,6 +101,19 @@ class Employee(models.Model):
     
     # Status
     is_active = models.BooleanField(default=True)
+    account_activated = models.BooleanField(
+        default=False,
+        help_text="Whether employee has activated their account via invitation"
+    )
+    onboarding_completed = models.BooleanField(
+        default=False,
+        help_text="Whether employee has completed the onboarding form"
+    )
+    account_activated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the employee activated their account"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -290,6 +314,8 @@ class EmailLog(models.Model):
         ('WELCOME', 'Welcome Email'),
         ('PAYSLIP', 'Payslip Email'),
         ('BULK_WELCOME', 'Bulk Welcome Email'),
+        ('RELIEVING', 'Relieving Letter'),
+        ('EXPERIENCE', 'Experience Letter'),
     ]
     
     STATUS_CHOICES = [
@@ -320,4 +346,279 @@ class EmailLog(models.Model):
         ordering = ['-sent_at']
 
     def __str__(self):
+        return f"Email Log: {self.email_type} to {self.recipient_email}"
+
+
+class EmployeeProfile(models.Model):
+    """
+    Extended employee profile information for onboarding.
+    """
+    employee = models.OneToOneField(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='profile'
+    )
+    phone = models.CharField(max_length=15, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    emergency_contact = models.CharField(max_length=100, blank=True, null=True)
+    bank_account = models.CharField(max_length=30, blank=True, null=True)
+    ifsc_code = models.CharField(max_length=15, blank=True, null=True)
+    pan_number = models.CharField(max_length=10, blank=True, null=True)
+    profile_photo = models.ImageField(
+        upload_to='employee_photos/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png'])]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'employee_profiles'
+        verbose_name = 'Employee Profile'
+        verbose_name_plural = 'Employee Profiles'
+
+    def __str__(self):
+        return f"Profile of {self.employee.name}"
+
+
+class EmployeeInvitation(models.Model):
+    """
+    Stores employee invitation tokens for account activation.
+    """
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('ACTIVATED', 'Activated'),
+        ('EXPIRED', 'Expired'),
+    ]
+
+    employee = models.OneToOneField(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='invitation'
+    )
+    email = models.EmailField()
+    token = models.CharField(max_length=255, unique=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    activated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'employee_invitations'
+        verbose_name = 'Employee Invitation'
+        verbose_name_plural = 'Employee Invitations'
+
+    def __str__(self):
+        return f"Invitation for {self.employee.name} ({self.email})"
+
+    @staticmethod
+    def generate_token():
+        """Generate a secure random token."""
+        return secrets.token_urlsafe(32)
+
+    @property
+    def is_expired(self):
+        """Check if invitation token has expired."""
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_valid(self):
+        """Check if invitation is valid for activation."""
+        return self.status == 'PENDING' and not self.is_expired
+
+
+class EmployeeAttendance(models.Model):
+    """
+    Tracks employee sign-in and sign-out times.
+    """
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='attendance_records'
+    )
+    date = models.DateField()
+    sign_in_time = models.DateTimeField(null=True, blank=True)
+    sign_out_time = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'employee_attendance'
+        verbose_name = 'Employee Attendance'
+        verbose_name_plural = 'Employee Attendance'
+        unique_together = ['employee', 'date']
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.date}"
+
+    @property
+    def total_hours(self):
+        """Calculate total working hours."""
+        if self.sign_in_time and self.sign_out_time:
+            duration = self.sign_out_time - self.sign_in_time
+            return duration.total_seconds() / 3600
+        return 0
+
+
+class LeaveType(models.Model):
+    """
+    Pre-defined leave types in the system.
+    """
+    name = models.CharField(max_length=50, unique=True)
+    max_days_per_year = models.IntegerField(default=10)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'leave_types'
+        verbose_name = 'Leave Type'
+        verbose_name_plural = 'Leave Types'
+
+    def __str__(self):
+        return self.name
+
+
+class LeaveRequest(models.Model):
+    """
+    Leave request model for employee leave applications.
+    """
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='leave_requests'
+    )
+    leave_type = models.ForeignKey(
+        LeaveType,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='leave_requests'
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    approved_by = models.ForeignKey(
+        'authentication.AdminUser',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_leaves'
+    )
+    approved_date = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'leave_requests'
+        verbose_name = 'Leave Request'
+        verbose_name_plural = 'Leave Requests'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.leave_type.name if self.leave_type else 'N/A'} ({self.start_date} to {self.end_date})"
+
+    @property
+    def number_of_days(self):
+        """Calculate the number of days for this leave request."""
+        return (self.end_date - self.start_date).days + 1
+
+
+class EmployeeDocument(models.Model):
+    """
+    Document storage for employees and admin-uploaded documents.
+    """
+    DOC_TYPE_CHOICES = [
+        ('PAN', 'PAN Card'),
+        ('AADHAAR', 'Aadhaar'),
+        ('BANK_DOC', 'Bank Document'),
+        ('CERTIFICATE', 'Certificate'),
+        ('OFFER_LETTER', 'Offer Letter'),
+        ('APPOINTMENT_LETTER', 'Appointment Letter'),
+        ('PROMOTION_LETTER', 'Promotion Letter'),
+        ('PAYSLIP', 'Payslip'),
+        ('OTHER', 'Other'),
+    ]
+
+    VISIBILITY_CHOICES = [
+        ('EMPLOYEE_ONLY', 'Employee Only'),
+        ('ADMIN_ONLY', 'Admin Only'),
+        ('BOTH', 'Both'),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='documents'
+    )
+    document_type = models.CharField(max_length=20, choices=DOC_TYPE_CHOICES)
+    document_name = models.CharField(max_length=255)
+    file = models.FileField(
+        upload_to='employee_documents/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'])]
+    )
+    uploaded_by = models.ForeignKey(
+        'authentication.AdminUser',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='uploaded_documents'
+    )
+    visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default='BOTH')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'employee_documents'
+        verbose_name = 'Employee Document'
+        verbose_name_plural = 'Employee Documents'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.document_name}"
+
+
+class Notification(models.Model):
+    """
+    In-app notification system for employees.
+    """
+    NOTIFICATION_TYPE_CHOICES = [
+        ('PAYSLIP_RELEASED', 'Payslip Released'),
+        ('LEAVE_APPROVED', 'Leave Approved'),
+        ('LEAVE_REJECTED', 'Leave Rejected'),
+        ('DOCUMENT_UPLOADED', 'Document Uploaded'),
+        ('ANNOUNCEMENT', 'Announcement'),
+        ('ATTENDANCE_ALERT', 'Attendance Alert'),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPE_CHOICES)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    related_id = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'notifications'
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} - {self.employee.name}"
         return f"{self.email_type} to {self.recipient_email} - {self.status}"

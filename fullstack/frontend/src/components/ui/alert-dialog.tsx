@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\alert-dialog.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
@@ -137,3 +141,4 @@ export {
   AlertDialogAction,
   AlertDialogCancel,
 }
+

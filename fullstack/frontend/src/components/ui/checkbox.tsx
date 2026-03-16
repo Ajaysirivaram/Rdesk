@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\checkbox.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { CheckIcon } from "@radix-ui/react-icons";
@@ -26,3 +30,4 @@ const Checkbox = React.forwardRef<
 Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
 export { Checkbox };
+

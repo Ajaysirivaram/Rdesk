@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\resizable.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import { DragHandleDots2Icon } from "@radix-ui/react-icons"
 import * as ResizablePrimitive from "react-resizable-panels"
 
@@ -41,3 +45,4 @@ const ResizableHandle = ({
 )
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle }
+

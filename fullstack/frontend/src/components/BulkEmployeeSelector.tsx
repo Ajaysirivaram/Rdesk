@@ -1,3 +1,7 @@
+/**
+ * Component: components\BulkEmployeeSelector.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState, useEffect } from 'react';
 import { employeeAPI, departmentAPI } from '../services/api';
 import { Employee, Department } from '../types';
@@ -320,3 +324,4 @@ const BulkEmployeeSelector: React.FC<BulkEmployeeSelectorProps> = ({
 };
 
 export default BulkEmployeeSelector;
+

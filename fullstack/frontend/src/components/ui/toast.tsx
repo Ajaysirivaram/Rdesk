@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\toast.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { Cross2Icon } from "@radix-ui/react-icons"
 import * as ToastPrimitives from "@radix-ui/react-toast"
@@ -125,3 +129,4 @@ export {
   ToastClose,
   ToastAction,
 }
+

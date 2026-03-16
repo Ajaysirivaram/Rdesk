@@ -1,5 +1,6 @@
 import os
 from celery import Celery
+from celery.schedules import crontab
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'camelq_payslip.settings')
@@ -12,6 +13,13 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
+
+app.conf.beat_schedule = {
+    "attendance-mark-absent-daily-2359": {
+        "task": "attendance.tasks.mark_daily_absent_task",
+        "schedule": crontab(hour=23, minute=59),
+    },
+}
 
 
 @app.task(bind=True)

@@ -1,3 +1,7 @@
+/**
+ * Component: components\WelcomeEmailManagement.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState, useEffect } from 'react';
 import { employeeAPI } from '../services/api';
 import { Employee } from '../types';
@@ -166,13 +170,13 @@ const WelcomeEmailManagement: React.FC<WelcomeEmailManagementProps> = ({ onNavig
         'name': 'John Doe',
         'personal_email': 'john.doe.personal@gmail.com',
         'password': 'TempPassword123!',
-        'system_email': 'john.doe@camelq.co.in'
+        'system_email': 'john.doe@blackroth.co.in'
       },
       {
         'name': 'Jane Smith',
         'personal_email': 'jane.smith.personal@gmail.com',
         'password': 'TempPassword456!',
-        'system_email': 'jane.smith@camelq.co.in'
+        'system_email': 'jane.smith@blackroth.co.in'
       }
     ];
 
@@ -997,3 +1001,4 @@ const WelcomeEmailManagement: React.FC<WelcomeEmailManagementProps> = ({ onNavig
 };
 
 export default WelcomeEmailManagement;
+

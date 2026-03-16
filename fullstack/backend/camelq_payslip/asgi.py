@@ -1,5 +1,5 @@
 """
-ASGI config for camelq_payslip project.
+ASGI config for RothDesk Payslip project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

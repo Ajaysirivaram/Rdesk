@@ -1,3 +1,7 @@
+/**
+ * Component: components\Dashboard.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Employee, PayPeriod, SalaryMethod } from '../types';
@@ -13,12 +17,14 @@ import {
   Building2,
   Calendar,
   DollarSign,
-  Upload
+  Upload,
+  ClipboardCheck
 } from 'lucide-react';
 
 // Import components
 import EmployeeManagement from './EmployeeManagement';
 import WelcomeEmailManagement from './WelcomeEmailManagement';
+import RelievingLetterSender from './RelievingLetterSender';
 import BulkEmployeeSelector from './BulkEmployeeSelector';
 import PeriodSelector from './PeriodSelector';
 import SalaryMethodSelector from './SalaryMethodSelector';
@@ -26,6 +32,7 @@ import BulkPayslipGenerator from './BulkPayslipGenerator';
 import MonthlySalaryUpload from './MonthlySalaryUpload';
 import ActualSalaryUpload from './ActualSalaryUpload';
 import SendPayslipsPanel from './SendPayslipsPanel';
+import AdminLeaveApproval from './AdminLeaveApproval';
 import { Mail } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
@@ -59,17 +66,14 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shadow-md">
-                <span className="text-primary-foreground font-bold text-lg">
-                  CQ
+                <span className="text-primary-foreground font-bold text-lg" style={{ fontFamily: '"Droid Serif", serif' }}>
+                  RD
                 </span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-primary">
-                  Camel-Q Payslip System
+                <h1 className="text-xl font-bold text-primary" style={{ fontFamily: '"Droid Serif", serif' }}>
+                  RothDesk
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  Bulk Payslip Generation for 200-500 Employees
-                </p>
               </div>
             </div>
             
@@ -90,7 +94,7 @@ const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 xl:grid-cols-9 h-auto gap-1">
             <TabsTrigger value="generate" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Generate Payslips
@@ -110,6 +114,14 @@ const Dashboard: React.FC = () => {
             <TabsTrigger value="welcome-emails" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
               Welcome Emails
+            </TabsTrigger>
+            <TabsTrigger value="relieving-letter" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Relieving Letter
+            </TabsTrigger>
+            <TabsTrigger value="leave-approvals" className="flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4" />
+              Leave Approvals
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -283,9 +295,19 @@ const Dashboard: React.FC = () => {
 
           {/* Welcome Emails Tab */}
           <TabsContent value="welcome-emails">
-            <WelcomeEmailManagement 
+            <WelcomeEmailManagement
               onNavigateBack={() => setActiveTab('employees')}
             />
+          </TabsContent>
+
+          {/* Relieving Letter Tab */}
+          <TabsContent value="relieving-letter">
+            <RelievingLetterSender />
+          </TabsContent>
+
+          {/* Leave Approvals Tab */}
+          <TabsContent value="leave-approvals">
+            <AdminLeaveApproval />
           </TabsContent>
 
           {/* Settings Tab */}
@@ -364,3 +386,4 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+

@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\skeleton.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import { cn } from "@/lib/utils"
 
 function Skeleton({
@@ -13,3 +17,4 @@ function Skeleton({
 }
 
 export { Skeleton }
+

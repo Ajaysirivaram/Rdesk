@@ -1,6 +1,18 @@
+export type EntityId = number;
+
+// Department Types
+export interface Department {
+  id: EntityId;
+  department_code: string;
+  department_name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 // Employee Types
 export interface Employee {
-  id: string;
+  id: EntityId;
   employee_id: string;
   name: string;
   position: string;
@@ -11,7 +23,7 @@ export interface Employee {
   pf_number: string;
   bank_account: string;
   bank_ifsc: string;
-  pay_mode: 'NEFT' | 'Cheque' | 'Cash';
+  pay_mode: 'Bank Transfer' | 'NEFT' | 'Cheque' | 'Cash';
   location: string;
   health_card_no?: string;
   email?: string;
@@ -25,10 +37,20 @@ export interface Employee {
   updated_at: string;
 }
 
+// Salary Structure Types
+export interface SalaryStructure {
+  id: EntityId;
+  employee: EntityId;
+  salary_type: 'SALARY' | 'STIPEND';
+  annual_ctc: number;
+  effective_from: string;
+  is_active: boolean;
+}
+
 // Monthly Salary Data Types
 export interface MonthlySalaryData {
-  id: string;
-  employee: string;
+  id: EntityId;
+  employee: EntityId;
   employee_name: string;
   employee_id: string;
   month: string;
@@ -51,33 +73,13 @@ export interface MonthlySalaryData {
   total_deductions: number;
   net_pay: number;
   uploaded_at: string;
-  uploaded_by: string;
+  uploaded_by: EntityId;
   uploaded_by_name: string;
-}
-
-// Department Types
-export interface Department {
-  id: string;
-  department_code: string;
-  department_name: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
-}
-
-// Salary Structure Types
-export interface SalaryStructure {
-  id: string;
-  employee: string; // Employee ID
-  salary_type: 'SALARY' | 'STIPEND';
-  annual_ctc: number;
-  effective_from: string;
-  is_active: boolean;
 }
 
 // Payslip Types
 export interface Payslip {
-  id: string;
+  id: EntityId;
   employee: Employee;
   pay_period_month: string;
   pay_period_year: number;
@@ -116,7 +118,7 @@ export type SalaryMethod = 'SALARY' | 'STIPEND';
 
 // Bulk Generation Types
 export interface BulkGenerationRequest {
-  employee_ids: string[];
+  employee_ids: EntityId[];
   pay_period: PayPeriod;
   salary_method: SalaryMethod;
 }
@@ -167,36 +169,6 @@ export interface ExcelImportResult {
   warnings: string[];
 }
 
-// Monthly Salary Data Types
-export interface MonthlySalaryData {
-  id: string;
-  employee: string; // Employee ID
-  employee_name: string;
-  employee_id: string;
-  month: string;
-  year: number;
-  basic: number;
-  hra: number;
-  da: number;
-  conveyance: number;
-  medical: number;
-  special_allowance: number;
-  pf_employee: number;
-  professional_tax: number;
-  pf_employer: number;
-  other_deductions: number;
-  salary_advance: number;
-  work_days: number;
-  days_in_month: number;
-  lop_days: number;
-  total_earnings: number;
-  total_deductions: number;
-  net_pay: number;
-  uploaded_at: string;
-  uploaded_by: string;
-  uploaded_by_name: string;
-}
-
 export interface MonthlySalaryUploadResult {
   success: boolean;
   imported_count: number;
@@ -207,7 +179,7 @@ export interface MonthlySalaryUploadResult {
 
 // Salary Calculation Preview Types
 export interface SalaryCalculationPreview {
-  employee_id: string;
+  employee_id: EntityId;
   employee_name: string;
   employee_id_code: string;
   department: string;
@@ -232,8 +204,8 @@ export interface SalaryPreviewResult {
 
 // Actual Salary Credited Types
 export interface ActualSalaryCredited {
-  id: string;
-  employee_id: string;
+  id: EntityId;
+  employee_id: EntityId;
   employee_name: string;
   employee_id_code: string;
   month: string;
@@ -250,7 +222,7 @@ export interface ActualSalaryUploadResult {
   errors: string[];
 }
 
-// Form Data Types (for the existing form compatibility)
+// Form Data Types (for legacy component compatibility)
 export interface EmployeeFormData {
   name: string;
   id: string;

@@ -1,12 +1,47 @@
 from rest_framework import status, generics
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from .models import Department
 from .serializers import DepartmentSerializer
+
+
+DEFAULT_IT_DEPARTMENTS = [
+    {'code': 'DEV', 'name': 'Development', 'description': 'Software engineering and application development'},
+    {'code': 'TST', 'name': 'Testing', 'description': 'Quality assurance and test automation'},
+    {'code': 'HR', 'name': 'HR', 'description': 'Human resources and people operations'},
+    {'code': 'OPS', 'name': 'Operations', 'description': 'IT operations and infrastructure'},
+    {'code': 'SAL', 'name': 'Sales', 'description': 'Business development and sales'},
+    {'code': 'SUP', 'name': 'Support', 'description': 'Customer and technical support'},
+]
+
+
+def ensure_default_it_departments():
+    for item in DEFAULT_IT_DEPARTMENTS:
+        department, created = Department.objects.get_or_create(
+            department_code=item['code'],
+            defaults={
+                'department_name': item['name'],
+                'description': item['description'],
+                'is_active': True,
+            }
+        )
+        if not created:
+            changed_fields = []
+            if department.department_name != item['name']:
+                department.department_name = item['name']
+                changed_fields.append('department_name')
+            if not department.description:
+                department.description = item['description']
+                changed_fields.append('description')
+            if not department.is_active:
+                department.is_active = True
+                changed_fields.append('is_active')
+            if changed_fields:
+                department.save(update_fields=changed_fields + ['updated_at'])
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -17,6 +52,10 @@ class DepartmentListCreateView(generics.ListCreateAPIView):
     queryset = Department.objects.filter(is_active=True)
     serializer_class = DepartmentSerializer
     permission_classes = [IsAuthenticated]
+
+    def list(self, request, *args, **kwargs):
+        ensure_default_it_departments()
+        return super().list(request, *args, **kwargs)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -56,87 +95,3 @@ def department_stats(request):
         'success': True,
         'data': stats
     }, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def check_departments(request):
-    """
-    Check if departments exist in the database.
-    """
-    try:
-        total_departments = Department.objects.count()
-        active_departments = Department.objects.filter(is_active=True).count()
-        
-        departments = Department.objects.filter(is_active=True)
-        dept_list = []
-        for dept in departments:
-            dept_list.append({
-                'id': dept.id,
-                'code': dept.department_code,
-                'name': dept.department_name,
-                'is_active': dept.is_active
-            })
-        
-        return Response({
-            'success': True,
-            'total_departments': total_departments,
-            'active_departments': active_departments,
-            'departments': dept_list
-        }, status=status.HTTP_200_OK)
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def create_sample_departments_api(request):
-    """
-    Create sample departments via API.
-    """
-    try:
-        departments_data = [
-            {'department_code': 'IT', 'department_name': 'Information Technology', 'description': 'Software development and IT support'},
-            {'department_code': 'HR', 'department_name': 'Human Resources', 'description': 'Human resources and employee management'},
-            {'department_code': 'FIN', 'department_name': 'Finance', 'description': 'Financial management and accounting'},
-            {'department_code': 'MKT', 'department_name': 'Marketing', 'description': 'Marketing and business development'},
-            {'department_code': 'OPS', 'department_name': 'Operations', 'description': 'Operations and project management'},
-            {'department_code': 'SALES', 'department_name': 'Sales', 'description': 'Sales and customer relations'},
-        ]
-        
-        created_count = 0
-        created_departments = []
-        
-        for dept_data in departments_data:
-            department, created = Department.objects.get_or_create(
-                department_code=dept_data['department_code'],
-                defaults={
-                    'department_name': dept_data['department_name'],
-                    'description': dept_data['description'],
-                    'is_active': True
-                }
-            )
-            if created:
-                created_count += 1
-                created_departments.append({
-                    'id': department.id,
-                    'code': department.department_code,
-                    'name': department.department_name
-                })
-        
-        return Response({
-            'success': True,
-            'message': f'Created {created_count} new departments',
-            'created_departments': created_departments,
-            'total_departments': Department.objects.filter(is_active=True).count()
-        }, status=status.HTTP_201_CREATED)
-        
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,3 +1,7 @@
+/**
+ * Component: components\BulkPayslipGenerator.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState } from 'react';
 import { Employee, PayPeriod, SalaryMethod, GenerationProgress } from '../types';
 import { payslipAPI } from '../services/api';
@@ -380,3 +384,4 @@ const BulkPayslipGenerator: React.FC<BulkPayslipGeneratorProps> = ({
 };
 
 export default BulkPayslipGenerator;
+

@@ -1,3 +1,7 @@
+/**
+ * Component: components\SalaryConfirmationDialog.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState, useEffect } from 'react';
 import { Employee, PayPeriod, SalaryCalculationPreview, SalaryPreviewResult } from '../types';
 import { salaryPreviewAPI } from '../services/api';
@@ -302,3 +306,4 @@ const SalaryConfirmationDialog: React.FC<SalaryConfirmationDialogProps> = ({
 };
 
 export default SalaryConfirmationDialog;
+

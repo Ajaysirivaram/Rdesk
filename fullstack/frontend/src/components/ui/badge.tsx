@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\badge.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -34,3 +38,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants }
+

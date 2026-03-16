@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\drawer.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
@@ -114,3 +118,4 @@ export {
   DrawerTitle,
   DrawerDescription,
 }
+

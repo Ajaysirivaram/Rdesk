@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 Camel-Q Payslip System - Windows Setup
+echo 🚀 RothDesk Payslip System - Windows Setup
 echo ==========================================
 
 REM Check if Python is installed

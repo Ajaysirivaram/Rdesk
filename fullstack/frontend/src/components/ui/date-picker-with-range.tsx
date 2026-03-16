@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\date-picker-with-range.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 "use client";
 
 import * as React from "react";
@@ -63,3 +67,4 @@ export default function DatePickerWithRange({
     </div>
   );
 }
+

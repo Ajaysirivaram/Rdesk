@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
-# Camel-Q Payslip System Startup Script
+# RothDesk Payslip System Startup Script
 
-Write-Host "🚀 Starting Camel-Q Payslip System" -ForegroundColor Green
+Write-Host "🚀 Starting RothDesk Payslip System" -ForegroundColor Green
 Write-Host "==================================" -ForegroundColor Green
 Write-Host ""
 

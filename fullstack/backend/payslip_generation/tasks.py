@@ -262,6 +262,26 @@ def calculate_salary_components(salary_structure, pay_period):
     """
     # Get month details
     month_details = get_month_details(pay_period['month'], pay_period['year'])
+    working_days = month_details['working_days']
+    lop_days = 0
+    payable_days = Decimal(str(working_days))
+
+    # Payroll integration with attendance summaries.
+    try:
+        from attendance.services import get_payroll_metrics
+
+        month_number = datetime.strptime(pay_period['month'], '%B').month
+        attendance_metrics = get_payroll_metrics(
+            salary_structure.employee,
+            month_number,
+            int(pay_period['year']),
+        )
+        working_days = int(attendance_metrics.get('working_days') or working_days)
+        lop_days = int(attendance_metrics.get('absent_days') or 0)
+        payable_days = Decimal(str(attendance_metrics.get('payable_days') or working_days))
+    except Exception:
+        # Fallback to static month details if attendance summary is unavailable.
+        pass
     
     # Calculate basic components
     monthly_salary = salary_structure.monthly_salary
@@ -277,13 +297,20 @@ def calculate_salary_components(salary_structure, pay_period):
     
     # Calculate totals
     total_earnings = basic + hra + da + conveyance + medical + special_allowance + pf_employee
-    total_deductions = professional_tax + pf_employer
+    lop_deduction = Decimal('0')
+    if working_days > 0 and payable_days < Decimal(str(working_days)):
+        monthly_base = Decimal(str(monthly_salary))
+        salary_per_day = monthly_base / Decimal(str(working_days))
+        payable_salary = salary_per_day * payable_days
+        lop_deduction = max(monthly_base - payable_salary, Decimal('0')).quantize(Decimal('0.01'))
+
+    total_deductions = professional_tax + pf_employer + lop_deduction
     net_pay = total_earnings - total_deductions
-    
+
     return {
-        'work_days': month_details['working_days'],
+        'work_days': working_days,
         'days_in_month': month_details['total_days'],
-        'lop_days': 0,  # Can be calculated based on attendance
+        'lop_days': lop_days,
         'basic': Decimal(str(basic)),
         'hra': Decimal(str(hra)),
         'da': Decimal(str(da)),
@@ -294,7 +321,7 @@ def calculate_salary_components(salary_structure, pay_period):
         'total_earnings': Decimal(str(total_earnings)),
         'professional_tax': Decimal(str(professional_tax)),
         'pf_employer': Decimal(str(pf_employer)),
-        'other_deductions': Decimal('0'),
+        'other_deductions': lop_deduction,
         'salary_advance': Decimal('0'),
         'total_deductions': Decimal(str(total_deductions)),
         'net_pay': Decimal(str(net_pay)),

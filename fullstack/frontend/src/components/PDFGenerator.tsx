@@ -1,3 +1,7 @@
+/**
+ * Component: components\PDFGenerator.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
@@ -60,3 +64,4 @@ const PDFGenerator = ({
 };
 
 export default PDFGenerator;
+

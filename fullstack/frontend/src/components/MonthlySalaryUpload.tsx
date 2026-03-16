@@ -1,3 +1,7 @@
+/**
+ * Component: components\MonthlySalaryUpload.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -273,11 +277,6 @@ const MonthlySalaryUpload: React.FC<MonthlySalaryUploadProps> = ({ onSuccessNavi
     setUploadResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('month', month);
-      formData.append('year', year);
-
       const progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 90) {
@@ -288,7 +287,7 @@ const MonthlySalaryUpload: React.FC<MonthlySalaryUploadProps> = ({ onSuccessNavi
         });
       }, 200);
 
-      const response = await monthlySalaryAPI.uploadExcel(selectedFile);
+      const response = await monthlySalaryAPI.uploadExcel(selectedFile, month, year);
 
       clearInterval(progressInterval);
       setProgress(100);

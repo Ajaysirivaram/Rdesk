@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\toaster.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import {
   Toast,
   ToastClose,
@@ -31,3 +35,4 @@ export function Toaster() {
     </ToastProvider>
   )
 }
+

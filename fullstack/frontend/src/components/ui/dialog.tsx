@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\dialog.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { Cross2Icon } from "@radix-ui/react-icons"
@@ -118,3 +122,4 @@ export {
   DialogTitle,
   DialogDescription,
 }
+

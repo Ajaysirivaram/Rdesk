@@ -10,9 +10,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-# Python lib directories (but not frontend src/lib)
 lib/
-!fullstack/frontend/src/lib/
 lib64/
 parts/
 sdist/
@@ -91,10 +89,6 @@ tmp/
 # Excel files (test data)
 *.xlsx
 *.xls
-
-# Test data files
-*testset*.csv
-*validation-set*.csv
 
 # Logs
 logs/

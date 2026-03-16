@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\context-menu.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
 import {
@@ -200,3 +204,4 @@ export {
   ContextMenuSubTrigger,
   ContextMenuRadioGroup,
 }
+

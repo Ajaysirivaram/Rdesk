@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\sheet.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { Cross2Icon } from "@radix-ui/react-icons"
@@ -136,3 +140,4 @@ export {
   SheetTitle,
   SheetDescription,
 }
+

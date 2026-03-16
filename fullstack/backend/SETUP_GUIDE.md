@@ -1,4 +1,4 @@
-# 🚀 Camel-Q Payslip System - Complete Setup Guide
+# 🚀 RothDesk Payslip System - Complete Setup Guide
 
 ## 📋 Prerequisites
 
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 mysql -u root -p
 
 # Create database
-CREATE DATABASE camelq_payslip;
+CREATE DATABASE rothdesk_payslip;
 exit
 ```
 
@@ -107,7 +107,7 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database Configuration
-DB_NAME=camelq_payslip
+DB_NAME=rothdesk_payslip
 DB_USER=root
 DB_PASSWORD=your-mysql-password
 DB_HOST=localhost
@@ -119,7 +119,7 @@ CELERY_RESULT_BACKEND=redis://localhost:6379/0
 
 # Admin Configuration
 ADMIN_USERNAME=admin
-ADMIN_EMAIL=admin@camelq.com
+ADMIN_EMAIL=admin@blackroth.com
 ADMIN_PASSWORD=admin123
 ```
 
@@ -284,5 +284,5 @@ After successful setup:
 5. **Configure email settings** for notifications
 6. **Set up monitoring** and logging
 
-Your Camel-Q Payslip System is now ready for production use! 🎉
+Your RothDesk Payslip System is now ready for production use! 🎉
 

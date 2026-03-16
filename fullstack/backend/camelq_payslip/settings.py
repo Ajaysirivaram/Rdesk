@@ -1,5 +1,5 @@
 """
-Django settings for camelq_payslip project.
+Django settings for RothDesk Payslip project.
 """
 
 import os
@@ -18,7 +18,7 @@ else:
 # --- Security ---
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-placeholder")
 
-DEBUG = config("DEBUG", default=True, cast=bool)
+DEBUG = str(config("DEBUG", default="True")).strip().lower() in ("true", "1", "yes", "on")
 
 ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "authentication",
     "departments",
     "employees",
+    "attendance",
     "payslip_generation",
 ]
 
@@ -51,7 +52,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -84,11 +84,11 @@ WSGI_APPLICATION = "camelq_payslip.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": config("DB_NAME", default="payroll"),
-        "USER": config("DB_USER", default="root"),
-        "PASSWORD": config("DB_PASSWORD", default=""),
-        "HOST": config("DB_HOST", default="localhost"),
-        "PORT": config("DB_PORT", default="3306"),
+        "NAME": "RothDesk",
+        "USER": "ajaydb",
+        "PASSWORD": "ajay",
+        "HOST": "localhost",
+        "PORT": "3306",
     }
 }
 
@@ -109,14 +109,6 @@ USE_TZ = True
 # --- Static & Media ---
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-
-# WhiteNoise configuration for static files
-STATICFILES_STORAGE = "whitenoise.storage.StaticFilesStorage"
-
-# Fallback for static files (only if directory exists)
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, "static"),
-# ]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
@@ -150,45 +142,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
-    "https://frontend-production-0c5f.up.railway.app",
 ]
-
-# Additional CORS settings for better compatibility
-CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-    'cache-control',
-    'pragma',
-    'expires',
-]
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-CORS_PREFLIGHT_MAX_AGE = 86400
-CORS_EXPOSE_HEADERS = [
-    'content-type',
-    'x-csrftoken',
-]
 
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS + [
-    "https://web-production-5f64c.up.railway.app",
-    "https://frontend-production-0c5f.up.railway.app",
-]
-CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 
 # --- Celery ---
@@ -202,6 +160,39 @@ CELERY_TIMEZONE = TIME_ZONE
 # --- File Upload Limits ---
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+
+# --- Frontend URL ---
+FRONTEND_URL = str(config("FRONTEND_URL", default="http://localhost:5173")).strip()
+
+# --- Email Configuration ---
+EMAIL_HOST = str(config("EMAIL_HOST", default="localhost")).strip()
+EMAIL_PORT = int(str(config("EMAIL_PORT", default="587")).strip())
+EMAIL_USE_TLS = str(config("EMAIL_USE_TLS", default="True")).strip().lower() in ("true", "1", "yes", "on")
+EMAIL_USE_SSL = str(config("EMAIL_USE_SSL", default="False")).strip().lower() in ("true", "1", "yes", "on")
+EMAIL_HOST_USER = str(config("EMAIL_HOST_USER", default="")).strip()
+EMAIL_HOST_PASSWORD = str(config("EMAIL_HOST_PASSWORD", default="")).strip()
+
+configured_email_backend = str(config("EMAIL_BACKEND", default="")).strip()
+if configured_email_backend:
+    EMAIL_BACKEND = configured_email_backend
+elif EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    # Prefer real SMTP delivery when credentials are available, even in DEBUG mode.
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+else:
+    EMAIL_BACKEND = (
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend"
+    )
+
+# Prevent false-positive "email sent" in non-debug runs caused by console backend overrides.
+if not DEBUG and EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+
+DEFAULT_FROM_EMAIL = str(
+    config("DEFAULT_FROM_EMAIL", default=(EMAIL_HOST_USER or "noreply@blackroth.in"))
+).strip()
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # --- Logging ---
 LOGGING = {
@@ -233,14 +224,3 @@ LOGGING = {
 }
 
 os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
-
-# Email settings
-EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = config("EMAIL_HOST", default="smtp.hostinger.com")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@camelq.co.in")
-SERVER_EMAIL = config("SERVER_EMAIL", default="noreply@camelq.co.in")

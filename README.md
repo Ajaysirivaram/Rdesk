@@ -1,4 +1,4 @@
-# CamelQ Payslip Management System
+# RothDesk Payslip Management System
 
 A comprehensive full-stack payslip management system with QR code verification, built with Django REST API and React frontend.
 
@@ -41,7 +41,7 @@ A comprehensive full-stack payslip management system with QR code verification, 
 ## 📁 Project Structure
 
 ```
-camelq-payslip-v1/
+RothDesk Payslip System/
 ├── fullstack/
 │   ├── backend/                 # Django API
 │   │   ├── authentication/     # User authentication
@@ -143,7 +143,7 @@ EMAIL_HOST_PASSWORD=your-app-password
 ```
 
 ### Database Configuration
-The system uses MySQL by default. To use PostgreSQL or SQLite, update the database settings in `camelq_payslip/settings.py`.
+The system uses MySQL by default. To use PostgreSQL or SQLite, update the database settings in `rothdesk_payslip/settings.py`.
 
 ## 📱 Usage
 
@@ -258,13 +258,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Team
 
-- **Development**: CamelQ Software Solutions Pvt. Ltd.
-- **Contact**: info@camelq.com
+- **Development**: BlackRoth Software Solutions Pvt. Ltd.
+- **Contact**: info@blackroth.com
 
 ## 🆘 Support
 
 For support and questions:
-- Email: info@camelq.com
+- Email: info@blackroth.com
 - Documentation: Check the `/docs` folder
 - Issues: Create an issue in the repository
 
@@ -307,7 +307,7 @@ docker-compose up -d
 
 ---
 
-**CamelQ Software Solutions Pvt. Ltd.**  
+**BlackRoth Software Solutions Pvt. Ltd.**  
 13th FLOOR, MANJEERA TRINITY CORPORATE, JNTU - HITECH CITY ROAD, 3/d PHASE, KPHB, KUKATPALLY, HYDERABAD - 500072
 
 *Built with ❤️ for efficient payslip management*

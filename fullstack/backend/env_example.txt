@@ -1,12 +1,12 @@
 # Django Settings
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=159618532784
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database Configuration
-DB_NAME=payroll
-DB_USER=root
-DB_PASSWORD=your-database-password
+DB_NAME=rothdesk_payslip
+DB_USER=ajaydb
+DB_PASSWORD=ajay
 DB_HOST=localhost
 DB_PORT=3306
 
@@ -14,13 +14,10 @@ DB_PORT=3306
 CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/0
 
-# Email Configuration (Hostinger SMTP)
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.hostinger.com
+# Email Configuration (Optional)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@camelq.co.in
+EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-email-password
-EMAIL_USE_SSL=False
-DEFAULT_FROM_EMAIL=noreply@camelq.co.in
-SERVER_EMAIL=noreply@camelq.co.in

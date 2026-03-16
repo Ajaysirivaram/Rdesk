@@ -1,3 +1,7 @@
+/**
+ * Component: components\ui\carousel.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import * as React from "react"
 import { ArrowLeftIcon, ArrowRightIcon } from "@radix-ui/react-icons"
 import useEmblaCarousel, {
@@ -258,3 +262,4 @@ export {
   CarouselPrevious,
   CarouselNext,
 }
+

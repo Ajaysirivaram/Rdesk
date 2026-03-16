@@ -1,3 +1,7 @@
+/**
+ * Component: components\ActualSalaryUpload.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState, useEffect } from 'react';
 import { Employee, PayPeriod, ActualSalaryCredited, ActualSalaryUploadResult } from '../types';
 import { actualSalaryAPI } from '../services/api';
@@ -59,7 +63,12 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
 
   const fetchExistingData = async () => {
     try {
-      const response = await actualSalaryAPI.getByMonthYear(parseInt(payPeriod.month), parseInt(payPeriod.year));
+      const year = Number.parseInt(payPeriod.year, 10);
+      if (Number.isNaN(year)) {
+        return;
+      }
+
+      const response = await actualSalaryAPI.getByMonthYear(payPeriod.month, year);
       if (response.data.success) {
         setExistingData(response.data.data);
         
@@ -121,8 +130,8 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
           employee_id: emp.employee_id,
           actual_salary_credited: emp.actual_salary_credited,
         })),
-        parseInt(payPeriod.month),
-        parseInt(payPeriod.year)
+        payPeriod.month,
+        Number.parseInt(payPeriod.year, 10)
       );
 
       clearInterval(progressInterval);
@@ -349,3 +358,4 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
 };
 
 export default ActualSalaryUpload;
+

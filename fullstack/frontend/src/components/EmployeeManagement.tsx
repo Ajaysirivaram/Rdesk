@@ -1,3 +1,7 @@
+/**
+ * Component: components\EmployeeManagement.tsx
+ * Purpose: Defines UI structure and behavior for this view/component.
+ */
 import React, { useState, useEffect } from 'react';
 import { employeeAPI, departmentAPI } from '../services/api';
 import { Employee, Department, ExcelImportResult } from '../types';
@@ -93,24 +97,38 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
   const loadData = async () => {
     try {
       setIsLoading(true);
-      console.log('Loading employees and departments...');
-      
+      console.log('Loading departments and employees...');
+
       const [employeesResponse, departmentsResponse] = await Promise.all([
         employeeAPI.getAll(),
         departmentAPI.getAll()
       ]);
-      
-      console.log('Employees response:', employeesResponse);
-      console.log('Departments response:', departmentsResponse);
-      
+
+      console.log('Departments response:', departmentsResponse.data);
+      console.log('Departments type:', typeof departmentsResponse.data);
+      console.log('Is array?', Array.isArray(departmentsResponse.data));
+
+      // Handle different response structures
+      let departmentsData = [];
+      if (Array.isArray(departmentsResponse.data)) {
+        departmentsData = departmentsResponse.data;
+      } else if (departmentsResponse.data.results) {
+        departmentsData = departmentsResponse.data.results;
+      } else {
+        console.error('Unexpected departments response structure:', departmentsResponse.data);
+        departmentsData = [];
+      }
+
+      console.log('Processed departments:', departmentsData);
+
       setEmployees(employeesResponse.data.results || employeesResponse.data);
-      setDepartments(departmentsResponse.data.results || departmentsResponse.data);
-      
-      console.log('Loaded departments:', departmentsResponse.data.results || departmentsResponse.data);
+      setDepartments(departmentsData);
+
     } catch (error) {
       console.error('Error loading data:', error);
-      console.error('Error details:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+      // Set empty arrays on error to prevent crashes
+      setEmployees([]);
+      setDepartments([]);
     } finally {
       setIsLoading(false);
     }
@@ -238,9 +256,15 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
       }
       
       // Prepare form data with proper types
-      const formData = { 
+      const departmentId = parseInt(employeeForm.department_id);
+      if (isNaN(departmentId)) {
+        alert('Please select a valid department');
+        return;
+      }
+
+      const formData = {
         ...employeeForm,
-        department_id: parseInt(employeeForm.department_id), // Convert to integer
+        department_id: departmentId, // Ensure it's a valid integer
         employee_id: employeeForm.employee_id.toUpperCase(), // Ensure uppercase
       };
       
@@ -261,7 +285,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
       console.log('Sending employee data:', formData); // Debug log
       
       const response = await employeeAPI.create(formData);
-      
+
       if (response.data) {
         // Reset form
         setEmployeeForm({
@@ -285,10 +309,13 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
         });
         setSendWelcomeEmail(true);
         setShowAddForm(false);
-        
-        // Reload employees
+
+        // Update employees state immediately with the new employee
+        setEmployees(prev => [response.data, ...prev]);
+
+        // Reload employees to ensure consistency
         await loadData();
-        
+
         alert('Employee created successfully!');
       }
     } catch (error: any) {
@@ -365,7 +392,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
         'pay_mode': 'NEFT',
         'location': 'Hyderabad',
         'health_card_no': 'HC123456',
-        'email': 'john.doe@camelq.co.in',
+        'email': 'john.doe@blackroth.co.in',
         'personal_email': 'john.doe.personal@gmail.com',
         'password': 'TempPass123!',
         'lpa': 6.0
@@ -427,15 +454,26 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
 
     try {
       setIsCreating(true);
-      
+
       // Prepare form data
       const formData = { ...employeeForm };
+
+      // Convert department_id to integer (same as create function)
+      const departmentId = parseInt(employeeForm.department_id);
+      if (isNaN(departmentId)) {
+        alert('Please select a valid department');
+        return;
+      }
+      formData.department_id = departmentId.toString();
+
       if (!sendWelcomeEmail) {
         // Don't send email if checkbox is unchecked
         delete formData.personal_email;
         delete formData.password;
       }
-      
+
+      console.log('Sending update data:', formData); // Debug log
+
       const response = await employeeAPI.update(selectedEmployee.id.toString(), formData);
       
       if (response.data) {
@@ -451,7 +489,34 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
       }
     } catch (error: any) {
       console.error('Update employee error:', error);
-      alert(`Failed to update employee: ${error.response?.data?.message || error.message}`);
+
+      // Enhanced error logging
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      }
+
+      // Better error message
+      let errorMessage = 'Failed to update employee';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        // Handle Django serializer errors
+        const errorMessages = [];
+        for (const [field, messages] of Object.entries(error.response.data.errors)) {
+          if (Array.isArray(messages)) {
+            errorMessages.push(`${field}: ${messages.join(', ')}`);
+          } else {
+            errorMessages.push(`${field}: ${messages}`);
+          }
+        }
+        errorMessage = errorMessages.join('\n');
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -923,7 +988,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
                         type="email"
                         value={employeeForm.email}
                         onChange={e => setEmployeeForm({...employeeForm, email: e.target.value})}
-                        placeholder="john.doe@camelq.co.in"
+                        placeholder="john.doe@blackroth.co.in"
                       />
                       <p className="text-xs text-gray-500">Email for system login</p>
                     </div>
@@ -1336,7 +1401,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
                         type="email"
                         value={employeeForm.email}
                         onChange={e => setEmployeeForm({...employeeForm, email: e.target.value})}
-                        placeholder="john.doe@camelq.co.in"
+                        placeholder="john.doe@blackroth.co.in"
                       />
                       <p className="text-xs text-gray-500">Email for system login</p>
                     </div>
@@ -1416,3 +1481,4 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
 };
 
 export default EmployeeManagement;
+
