@@ -4,11 +4,6 @@
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { authAPI } from '@/services/api';
 
@@ -117,31 +112,40 @@ const UnifiedLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-background/80 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex flex-col items-center mb-6">
-            <img
-              src="/logo.svg"
-              alt="RothDesk"
-              className="h-20 w-auto mb-4"
-            />
-            <p className="text-gray-500 text-sm">
-              Payroll & Employee Portal
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-emerald-50 to-white flex items-center justify-center p-4 md:p-6">
+      <div className="relative w-[92vw] max-w-[560px] aspect-square flex items-center justify-center">
+        <div className="absolute inset-0 animate-rotate">
+          <span className="circle pulse-1 border-pink-500/70" />
+          <span className="circle pulse-2 border-amber-400/70" />
+          <span className="circle pulse-3 border-cyan-500/70" />
+          <span className="circle pulse-4 border-emerald-500/70" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-[420px] p-6 md:p-8">
+          <div className="flex flex-col items-center gap-2 mb-6">
+           <div className="flex items-center justify-center mb-3">
+              <h1
+                className="text-4xl bg-gradient-to-r from-teal-500 via-pink-500 to-purple-600 bg-clip-text text-transparent"
+                style={{ fontFamily: '"Droid Serif", serif' }}
+              >
+                <span className="font-black text-5xl">R</span>Desk
+              </h1>
+            </div>
+            <p className="text-sm font-medium text-slate-500">Payroll & Employee Portal</p>
           </div>
-        </CardHeader>
-        <CardContent>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                {error}
+              </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="usernameOrEmail">Username or Email</Label>
-              <Input
+              <label htmlFor="usernameOrEmail" className="text-sm font-medium text-slate-700">
+                Username or Email
+              </label>
+              <input
                 id="usernameOrEmail"
                 type="text"
                 value={formData.usernameOrEmail}
@@ -153,14 +157,17 @@ const UnifiedLogin: React.FC = () => {
                 }
                 placeholder="Enter your username or email"
                 disabled={isLoading}
+                className="block w-full rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-200"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <label htmlFor="password" className="text-sm font-medium text-slate-700">
+                Password
+              </label>
               <div className="relative">
-                <Input
+                <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
@@ -172,36 +179,47 @@ const UnifiedLogin: React.FC = () => {
                   }
                   placeholder="Enter your password"
                   disabled={isLoading}
+                  className="block w-full rounded-full border border-slate-200 bg-white px-4 py-2.5 pr-11 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-200"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                   disabled={isLoading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
+              </div>
+
+              <div className="flex justify-end">
+                <a
+                  href="#"
+                  onClick={(event) => event.preventDefault()}
+                  className="text-xs font-medium text-sky-600 hover:text-sky-700"
+                >
+                  Forgot Password?
+                </a>
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-full bg-gradient-to-r from-[#8b1538] to-[#00bcd4] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
+            >
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Logging in...
-                </>
+                </span>
               ) : (
-                'Login'
+                'Sign In'
               )}
-            </Button>
+            </button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
