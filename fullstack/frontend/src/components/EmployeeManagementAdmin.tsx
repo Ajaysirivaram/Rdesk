@@ -3,6 +3,7 @@
  * Purpose: Defines UI structure and behavior for this view/component.
  */
 import React, { useState, useEffect } from 'react';
+import { employeeAPI, employeeActivationAPI, employeeAdminAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -65,20 +66,13 @@ const EmployeeManagementAdmin: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/employees/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...newEmployeeForm,
-          employee_id: newEmployeeForm.employee_id.toUpperCase(),
-        }),
+      const response = await employeeAPI.create({
+        ...newEmployeeForm,
+        employee_id: newEmployeeForm.employee_id.toUpperCase(),
       });
 
-      const data = await response.json();
-      if (data.success || response.ok) {
-        setSuccess(data.message || 'Employee added and activation invitation sent');
+      if (response.data.success || response.status === 201 || response.status === 200) {
+        setSuccess(response.data.message || 'Employee added and activation invitation sent');
         setNewEmployeeForm({
           employee_id: '',
           name: '',
@@ -88,10 +82,10 @@ const EmployeeManagementAdmin: React.FC = () => {
         });
         loadEmployees();
       } else {
-        setError(data.message || 'Failed to add employee');
+        setError(response.data.message || 'Failed to add employee');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred. Please try again.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -104,16 +98,10 @@ const EmployeeManagementAdmin: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/employee/send-invitation/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ employee_id: employeeId }),
-      });
+      const response = await employeeActivationAPI.sendInvitation(employeeId);
 
-      const data = await response.json();
-      if (!response.ok || !data?.success) {
+      const data = response.data;
+      if (!data?.success) {
         setError(data.message || 'Failed to send invitation');
         return;
       }
@@ -147,27 +135,21 @@ const EmployeeManagementAdmin: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/employee/bulk-release-payslips/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          employee_ids: selectedEmployees,
-          month: releaseForm.month,
-          year: parseInt(releaseForm.year),
-        }),
+      const response = await employeeAdminAPI.bulkReleasePayslips({
+        month: releaseForm.month,
+        year: parseInt(releaseForm.year),
+        selected_employees: selectedEmployees.length > 0 ? selectedEmployees : undefined,
       });
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setSuccess(data.message);
         setSelectedEmployees([]);
       } else {
         setError(data.message || 'Failed to release payslips');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred. Please try again.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -176,8 +158,8 @@ const EmployeeManagementAdmin: React.FC = () => {
 
   const loadEmployees = async () => {
     try {
-      const response = await fetch('/api/employees/');
-      const data = await response.json();
+      const response = await employeeAPI.getAll();
+      const data = response.data;
       if (Array.isArray(data)) {
         setEmployees(data);
       } else if (data.results) {

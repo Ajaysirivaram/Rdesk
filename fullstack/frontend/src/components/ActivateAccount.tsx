@@ -4,6 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { employeeActivationAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -84,20 +85,13 @@ const ActivateAccount: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/auth/employee/activate/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          token,
-          password: formData.password,
-          confirm_password: formData.confirmPassword,
-        }),
+      const response = await employeeActivationAPI.activate({
+        token,
+        password: formData.password,
+        confirm_password: formData.confirmPassword,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         setSuccess('Account activated successfully! Redirecting to onboarding...');
@@ -107,9 +101,10 @@ const ActivateAccount: React.FC = () => {
       } else {
         setError(data.message || 'Activation failed. Please try again.');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      const serverMessage = err?.response?.data?.message || err?.message || 'An error occurred. Please try again.';
+      setError(serverMessage);
+      console.error('Account activation error:', err);
     } finally {
       setIsLoading(false);
     }

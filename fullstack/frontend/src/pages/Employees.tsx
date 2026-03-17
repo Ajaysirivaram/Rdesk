@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Download, Send, FileText, Trash2, Eye, Pencil, KeyRound, Copy, Mail } from 'lucide-react';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import Modal from '@/components/Modal';
-import { attendanceAPI, departmentAPI, employeeAPI } from '@/services/api';
+import { attendanceAPI, departmentAPI, employeeAPI, employeeActivationAPI, employeeAdminAPI } from '@/services/api';
 
 interface DepartmentOption {
   id: number;
@@ -49,6 +49,7 @@ const initialForm: EmployeeFormState = {
   employee_id: '',
   name: '',
   email: '',
+  personal_email: '',
   position: '',
   department_id: '',
   shift_id: '',
@@ -71,10 +72,6 @@ const getSaveEmployeeErrorMessage = (error: any): string => {
     return 'Unable to save employee. Please check all required fields.';
   }
 
-  if (typeof payload.message === 'string' && payload.message.trim()) {
-    return payload.message;
-  }
-
   const errors = payload.errors;
   if (errors && typeof errors === 'object') {
     const firstKey = Object.keys(errors)[0];
@@ -85,6 +82,10 @@ const getSaveEmployeeErrorMessage = (error: any): string => {
     if (typeof firstValue === 'string') {
       return `${firstKey}: ${firstValue}`;
     }
+  }
+
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    return payload.message;
   }
 
   return 'Unable to save employee. Please check all required fields.';
@@ -216,6 +217,7 @@ const EmployeesPage: React.FC = () => {
       employee_id: employee.employee_id || '',
       name: employee.name || '',
       email: employee.email || '',
+      personal_email: (employee as any).personal_email || '',
       position: employee.position || '',
       department_id: employee.department?.id ? String(employee.department.id) : '',
       shift_id: employee.shift?.id ? String(employee.shift.id) : '',
@@ -309,20 +311,16 @@ const EmployeesPage: React.FC = () => {
         return;
       }
 
-      if (!isEditing) {
-        const duplicate = employees.some(
-          (employee) => employee.employee_id?.toUpperCase() === normalizedEmployeeId
-        );
-        if (duplicate) {
-          alert('Employee ID already exists.');
-          return;
-        }
+      if (!isEditing && !formData.personal_email?.trim()) {
+        alert('Personal email is required to send the activation invitation.');
+        return;
       }
 
       const payload = {
         employee_id: normalizedEmployeeId,
         name: formData.name.trim(),
         email: normalizedEmail,
+        personal_email: formData.personal_email?.trim() || undefined,
         position: formData.position.trim() || 'Employee',
         department_id: Number(formData.department_id),
         shift_id: Number(formData.shift_id),
@@ -334,8 +332,12 @@ const EmployeesPage: React.FC = () => {
         await employeeAPI.update(String(activeEmployeeId), payload);
         setToastState({ type: 'success', message: 'Employee updated successfully.' });
       } else {
-        await employeeAPI.create(payload);
-        setToastState({ type: 'success', message: 'Employee created successfully.' });
+        const createResponse = await employeeAPI.create(payload);
+        const newEmployeeId: number = createResponse.data?.id;
+        setToastState({ type: 'success', message: 'Employee created. Sending invitation...' });
+        if (newEmployeeId) {
+          await sendInvitation(newEmployeeId);
+        }
       }
       setOpenForm(false);
       resetForm();
@@ -348,14 +350,10 @@ const EmployeesPage: React.FC = () => {
 
   const sendInvitation = async (employeeId: number) => {
     try {
-      const response = await fetch('/api/auth/employee/send-invitation/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ employee_id: employeeId, debug: import.meta.env.DEV }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data?.success) {
+      const response = await employeeActivationAPI.sendInvitation(employeeId);
+      const data = response.data;
+
+      if (!data?.success) {
         alert(data?.message || 'Failed to send invitation');
         return;
       }
@@ -369,21 +367,22 @@ const EmployeesPage: React.FC = () => {
 
       alert(data.message || 'Invitation sent successfully');
     } catch (error) {
+      console.error('Failed to send invitation:', error);
       alert('Failed to send invitation');
     }
   };
 
   const releasePayslip = async (employeeId: number) => {
     try {
-      const response = await fetch('/api/auth/employee/release-payslip/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ employee_id: employeeId }),
+      const response = await employeeAdminAPI.bulkReleasePayslips({
+        month: new Date().toLocaleString('default', { month: 'long' }),
+        year: new Date().getFullYear(),
+        selected_employees: [employeeId],
       });
-      const data = await response.json();
+      const data = response.data;
       alert(data.message || 'Payslip action completed');
     } catch (error) {
+      console.error('Failed to release payslip:', error);
       alert('Failed to release payslip');
     }
   };
@@ -653,6 +652,22 @@ const EmployeesPage: React.FC = () => {
                 className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm"
                 placeholder="name@blackroth.in"
                 required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-600">
+                Personal Email <span className="text-rose-500">*</span>
+                <span className="text-slate-400 font-normal ml-1">(invitation sent here)</span>
+              </label>
+              <input
+                type="email"
+                value={formData.personal_email || ''}
+                onChange={(event) =>
+                  setFormData((prev) => ({ ...prev, personal_email: event.target.value }))
+                }
+                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm"
+                placeholder="employee@gmail.com"
+                required={!isEditing}
               />
             </div>
             <div className="space-y-1">

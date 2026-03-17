@@ -4,6 +4,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { employeeDashboardAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -72,20 +73,20 @@ const EmployeeDashboard: React.FC = () => {
         return;
       }
 
-      const profileResponse = await fetch(`/api/auth/employee/profile/?employee_id=${userId}`);
-      const profileData = await profileResponse.json();
+      const profileResponse = await employeeDashboardAPI.getProfile(userId);
+      const profileData = profileResponse.data;
       if (profileData.success) {
         setEmployee(profileData.profile);
       }
 
-      const payslipsResponse = await fetch(`/api/auth/employee/payslips/?employee_id=${userId}`);
-      const payslipsData = await payslipsResponse.json();
+      const payslipsResponse = await employeeDashboardAPI.getPayslips(userId);
+      const payslipsData = payslipsResponse.data;
       if (payslipsData.success) {
         setPayslips(payslipsData.payslips);
       }
 
-      const attendanceResponse = await fetch(`/api/auth/employee/attendance/?employee_id=${userId}`);
-      const attendanceData = await attendanceResponse.json();
+      const attendanceResponse = await employeeDashboardAPI.getAttendanceHistory(userId);
+      const attendanceData = attendanceResponse.data;
       if (attendanceData.success) {
         setAttendance(attendanceData.attendance);
         checkTodayAttendance(attendanceData.attendance);
@@ -114,15 +115,9 @@ const EmployeeDashboard: React.FC = () => {
   const handleSignIn = async () => {
     try {
       const userId = localStorage.getItem('userId');
-      const response = await fetch('/api/auth/employee/sign-in/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ employee_id: userId }),
-      });
+      const response = await employeeDashboardAPI.signIn(userId!);
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setTodayAttendance((prev) => ({
           ...prev,
@@ -138,15 +133,9 @@ const EmployeeDashboard: React.FC = () => {
   const handleSignOut = async () => {
     try {
       const userId = localStorage.getItem('userId');
-      const response = await fetch('/api/auth/employee/sign-out/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ employee_id: userId }),
-      });
+      const response = await employeeDashboardAPI.signOut(userId!);
 
-      const data = await response.json();
+      const data = response.data;
       if (data.success) {
         setTodayAttendance((prev) => ({
           ...prev,

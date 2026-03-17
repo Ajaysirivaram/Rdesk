@@ -15,6 +15,7 @@ from django.db import transaction, models
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Employee, SalaryStructure, MonthlySalaryData, ActualSalaryCredited, EmailLog
 from .serializers import (
@@ -36,6 +37,51 @@ def _resolve_admin_role(user):
         return 'hr'
     return 'admin'
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@csrf_exempt
+def test_welcome_email_simple(request):
+    """
+    Simple test endpoint for welcome email
+    """
+    try:
+        data = {
+            "name": request.data.get("name", "Test User"),
+            "personal_email": request.data.get("personal_email", "test@example.com"),
+            "password": request.data.get("password", "TestPass123!"),
+            "system_email": request.data.get("system_email", "test@blackroth.co.in"),
+        }
+
+        class TestEmployee:
+            def __init__(self, name, email, personal_email, password, employee_id):
+                self.name = name
+                self.email = email
+                self.personal_email = personal_email
+                self.password = password
+                self.employee_id = employee_id
+
+        employee = TestEmployee(
+            name=data["name"],
+            email=data["system_email"],
+            personal_email=data["personal_email"],
+            password=data["password"],
+            employee_id="TEST001"
+        )
+
+        from .email_service import EmployeeEmailService
+        email_service = EmployeeEmailService()
+        success, message = email_service.send_welcome_email(employee)
+
+        return Response({
+            "success": success,
+            "message": message
+        })
+
+    except Exception as e:
+        return Response({
+            "success": False,
+            "message": str(e)
+        })
 
 def _generate_secure_temp_password(length: int = 12) -> str:
     alphabet = string.ascii_letters + string.digits + '@#$%&*!?'
@@ -205,6 +251,7 @@ def regenerate_employee_password(request, pk):
     }, status=status.HTTP_200_OK)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class EmployeeListCreateView(generics.ListCreateAPIView):
     """
     List all employees or create a new employee.
@@ -219,9 +266,6 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
     ordering = ['name']
 
     def create(self, request, *args, **kwargs):
-        """
-        Return clean serializer validation payload for frontend handling.
-        """
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             return Response({
@@ -233,22 +277,14 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
         employee = serializer.save()
         headers = self.get_success_headers(serializer.data)
         response_data = self.get_serializer(employee).data
-        reactivated = bool(getattr(serializer, '_reactivated_employee', False))
         response_data.update({
             'success': True,
-            'message': (
-                'Employee reactivated and activation invitation sent.'
-                if reactivated
-                else 'Employee created and activation invitation sent.'
-            )
+            'message': 'Employee created and activation invitation sent.'
         })
-        return Response(
-            response_data,
-            status=status.HTTP_200_OK if reactivated else status.HTTP_201_CREATED,
-            headers=headers
-        )
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retrieve, update or delete an employee.
@@ -258,9 +294,8 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_destroy(self, instance):
-        # Soft delete - set is_active to False
-        instance.is_active = False
-        instance.save()
+        # Hard delete - removes employee and all related records (CASCADE)
+        instance.delete()
 
 
 @api_view(['GET'])
@@ -919,11 +954,8 @@ def get_salary_calculation_preview(request):
         month = request.GET.get('month')
         year = int(request.GET.get('year'))
 
-        # DEBUG: Log input parameters
-        print(f"=== DEBUG: Salary Preview API ===")
-        print(f"employee_ids: {employee_ids}")
-        print(f"month: {month}")
-        print(f"year: {year}")
+
+
 
         if not employee_ids or not month or not year:
             return Response({
@@ -936,29 +968,26 @@ def get_salary_calculation_preview(request):
             is_active=True
         ).select_related('department')
 
-        print(f"Found {employees.count()} active employees matching IDs")
+
 
         preview_data = []
 
         for employee in employees:
-            print(f"Processing employee: {employee.name} (ID: {employee.id}, Employee ID: {employee.employee_id})")
-            print(f"Employee LPA: {employee.lpa}")
+
 
             # Get monthly salary data
-            monthly_salary = MonthlySalaryData.objects.filter(
+            monthly_salary_qs = MonthlySalaryData.objects.filter(
                 employee=employee,
                 month=month,
                 year=year
-            ).first()
+            )
 
-            print(f"Monthly salary found: {monthly_salary is not None}")
-            if monthly_salary:
-                print(f"Monthly salary net_pay: {monthly_salary.net_pay}")
-
-            if employee.lpa and monthly_salary:
-                print(f"Both LPA and monthly salary exist - including in preview")
-                # Use LPA from employee model (convert to annual amount)
-                lpa_annual = float(employee.lpa) * 100000  # Convert lakhs to rupees
+            if monthly_salary_qs.exists():
+                monthly_salary = monthly_salary_qs.first()
+                if employee.lpa:
+                    lpa_annual = float(employee.lpa) * 100000  # Convert lakhs to rupees
+                else:
+                    lpa_annual = 0
                 calculated_monthly = float(monthly_salary.net_pay)
 
                 preview_data.append({
@@ -966,17 +995,19 @@ def get_salary_calculation_preview(request):
                     'employee_name': employee.name,
                     'employee_id_code': employee.employee_id,
                     'department': employee.department.department_name,
-                    'lpa': float(employee.lpa),
+                    'lpa': float(employee.lpa) if employee.lpa else 0,
                     'calculated_monthly': calculated_monthly,
                     'lpa_monthly': lpa_annual / 12,
-                    'difference': abs(calculated_monthly - (lpa_annual / 12)),
+                    'difference': abs(calculated_monthly - (lpa_annual / 12)) if lpa_annual > 0 else calculated_monthly,
                     'difference_percentage': abs((calculated_monthly - (lpa_annual / 12)) / (lpa_annual / 12) * 100) if lpa_annual > 0 else 0,
-                    'is_nearby': abs(calculated_monthly - (lpa_annual / 12)) <= (lpa_annual / 12 * 0.1)  # Within 10%
+                    'is_nearby': abs(calculated_monthly - (lpa_annual / 12)) <= (lpa_annual / 12 * 0.1) if lpa_annual > 0 else False  # Within 10%
                 })
             else:
-                print(f"Missing data - LPA: {employee.lpa is not None}, Monthly Salary: {monthly_salary is not None}")
+                # No monthly salary data for this employee/month
+                continue
 
-        print(f"Final preview_data length: {len(preview_data)}")
+
+
 
         return Response({
             'success': True,
@@ -990,7 +1021,7 @@ def get_salary_calculation_preview(request):
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        print(f"Error in salary preview: {str(e)}")
+
         return Response({
             'success': False,
             'message': f'Error getting salary preview: {str(e)}'
@@ -1355,7 +1386,7 @@ def get_email_logs(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Temporarily allow any for testing
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def process_welcome_email_excel(request):
     """
@@ -1520,9 +1551,9 @@ def process_welcome_email_excel(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-def test_welcome_email_simple(request):
+def process_welcome_email_excel(request):
     """
     Simple test endpoint for welcome email without authentication
     """

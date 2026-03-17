@@ -184,7 +184,7 @@ const MonthlySalaryUpload: React.FC<MonthlySalaryUploadProps> = ({ onSuccessNavi
   const handleEditSalary = (salary: MonthlySalaryData) => {
     setSelectedSalary(salary);
     setSalaryForm({
-      employee: salary.employee,
+      employee: String(salary.employee),
       month: salary.month,
       year: salary.year,
       basic: salary.basic,
@@ -726,7 +726,7 @@ const MonthlySalaryUpload: React.FC<MonthlySalaryUploadProps> = ({ onSuccessNavi
                   </SelectTrigger>
                   <SelectContent>
                     {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.id}>
+                      <SelectItem key={emp.id} value={String(emp.id)}>
                         {emp.name} ({emp.employee_id})
                       </SelectItem>
                     ))}
@@ -958,7 +958,7 @@ const MonthlySalaryUpload: React.FC<MonthlySalaryUploadProps> = ({ onSuccessNavi
                   </SelectTrigger>
                   <SelectContent>
                     {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.id}>
+                      <SelectItem key={emp.id} value={String(emp.id)}>
                         {emp.name} ({emp.employee_id})
                       </SelectItem>
                     ))}

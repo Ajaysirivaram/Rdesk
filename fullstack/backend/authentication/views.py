@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import check_password, identify_hasher, make_password
 from django.contrib.auth.decorators import login_required
@@ -54,9 +55,9 @@ def _verify_employee_password(employee: Employee, raw_password: str) -> bool:
     return False
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
-@csrf_exempt
 def login_view(request):
     """
     Unified login endpoint.
@@ -87,8 +88,13 @@ def login_view(request):
             request.session['admin_id'] = user.id
             request.session.pop('employee_id', None)
             role = _resolve_admin_role(user)
+
+            refresh = RefreshToken.for_user(user)
+
             return Response({
                 'success': True,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
                 'message': 'Login successful',
                 'role': role,
                 'user': {
@@ -150,6 +156,7 @@ def login_view(request):
             'employee_id': employee.id
         }, status=status.HTTP_400_BAD_REQUEST)
 
+    # Use session-based auth for employee portal (mobile/web session cookie). Do not issue admin JWT for employee model.
     return Response({
         'success': True,
         'message': 'Login successful',
@@ -165,7 +172,7 @@ def login_view(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 @csrf_exempt
 def logout_view(request):
     """
