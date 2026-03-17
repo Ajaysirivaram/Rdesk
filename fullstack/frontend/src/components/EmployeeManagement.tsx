@@ -149,7 +149,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
     // Filter by department
     if (selectedDepartment !== 'all') {
       filtered = filtered.filter(employee =>
-        employee.department.id === selectedDepartment
+        String(employee.department.id) === selectedDepartment
       );
     }
 
@@ -194,7 +194,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
   };
 
 
-  const getDepartmentName = (departmentId: string) => {
+  const getDepartmentName = (departmentId: number) => {
     const dept = departments.find(d => d.id === departmentId);
     return dept ? dept.department_name : 'Unknown';
   };
@@ -701,7 +701,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
                   {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
+                    <SelectItem key={dept.id} value={String(dept.id)}>
                       {dept.department_name}
                     </SelectItem>
                   ))}
@@ -860,7 +860,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
+                        <SelectItem key={dept.id} value={String(dept.id)}>
                           {dept.department_name}
                         </SelectItem>
                       ))}
@@ -1273,7 +1273,7 @@ const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ onNavigateToUpl
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
+                        <SelectItem key={dept.id} value={String(dept.id)}>
                           {dept.department_name}
                         </SelectItem>
                       ))}

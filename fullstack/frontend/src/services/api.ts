@@ -37,7 +37,13 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token if available
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const cookieMatch = document.cookie.match(new RegExp(`(^|;\s*)${name}=([^;]*)`));
+  return cookieMatch ? decodeURIComponent(cookieMatch[2]) : null;
+};
+
+// Request interceptor to add auth token and CSRF token if available
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -49,6 +55,16 @@ api.interceptors.request.use(
       }
       config.headers = headers;
     }
+
+    const csrfToken = getCookie('csrftoken');
+    if (csrfToken && ['post', 'put', 'patch', 'delete'].includes((config.method || '').toLowerCase())) {
+      const headers = AxiosHeaders.from(config.headers);
+      if (!headers.has('X-CSRFToken') && !headers.has('X-CSRF-Token')) {
+        headers.set('X-CSRFToken', csrfToken);
+      }
+      config.headers = headers;
+    }
+
     return config;
   },
   (error) => {
@@ -58,7 +74,15 @@ api.interceptors.request.use(
 
 // Response interceptor to handle common errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const csrfTokenFromHeader = response.headers['x-csrftoken'] || response.headers['x-csrf-token'];
+    if (csrfTokenFromHeader) {
+      if (typeof document !== 'undefined') {
+        document.cookie = `csrftoken=${encodeURIComponent(csrfTokenFromHeader)}; path=/`;
+      }
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken');
@@ -372,6 +396,46 @@ export const attendanceAPI = {
 
   // Configuration status
   getConfigStatus: () => api.get('/attendance/config-status'),
+};
+
+// Employee Activation & Onboarding API
+export const employeeActivationAPI = {
+  activate: (data: { token: string; password: string; confirm_password: string }) =>
+    api.post('/auth/employee/activate/', data),
+  sendInvitation: (employeeId: number | string) =>
+    api.post('/auth/employee/send-invitation/', { employee_id: employeeId }),
+  onboard: (data: FormData) =>
+    api.post('/auth/employee/onboarding/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+};
+
+// Employee Dashboard API
+export const employeeDashboardAPI = {
+  getProfile: (employeeId: number | string) =>
+    api.get(`/authentication/employee/profile/`, { params: { employee_id: employeeId } }),
+  getPayslips: (employeeId: number | string) =>
+    api.get(`/authentication/employee/payslips/`, { params: { employee_id: employeeId } }),
+  getAttendanceHistory: (employeeId: number | string) =>
+    api.get(`/authentication/employee/attendance_history/`, { params: { employee_id: employeeId } }),
+  signIn: (employeeId: number | string) =>
+    api.post('/auth/employee/sign-in/', { employee_id: employeeId }),
+  signOut: (employeeId: number | string) =>
+    api.post('/auth/employee/sign-out/', { employee_id: employeeId }),
+};
+
+// Employee Management Admin API
+export const employeeAdminAPI = {
+  bulkReleasePayslips: (data: { month: string; year: number; selected_employees?: number[] }) =>
+    api.post('/auth/employee/bulk-release-payslips/', data),
+  sendRelievingLetter: (data: FormData) =>
+    api.post('/employees/send-relieving-letter/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
 };
 
 export default api;

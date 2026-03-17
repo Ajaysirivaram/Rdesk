@@ -191,16 +191,6 @@ const UnifiedLogin: React.FC = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-
-              <div className="flex justify-end">
-                <a
-                  href="#"
-                  onClick={(event) => event.preventDefault()}
-                  className="text-xs font-medium text-sky-600 hover:text-sky-700"
-                >
-                  Forgot Password?
-                </a>
-              </div>
             </div>
 
             <button

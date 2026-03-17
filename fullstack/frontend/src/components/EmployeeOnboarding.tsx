@@ -4,6 +4,7 @@
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { employeeActivationAPI } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -94,13 +95,9 @@ const EmployeeOnboarding: React.FC = () => {
       formDataToSend.append('address', formData.address);
       formDataToSend.append('personal_email', formData.personalEmail);
 
-      const response = await fetch('/api/auth/employee/onboarding/', {
-        method: 'POST',
-        credentials: 'include',
-        body: formDataToSend,
-      });
+      const response = await employeeActivationAPI.onboard(formDataToSend);
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         setSuccess('Onboarding completed successfully! Redirecting to login...');
@@ -110,8 +107,8 @@ const EmployeeOnboarding: React.FC = () => {
       } else {
         setError(data.message || 'Onboarding failed. Please try again.');
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred. Please try again.');
       console.error(err);
     } finally {
       setIsLoading(false);

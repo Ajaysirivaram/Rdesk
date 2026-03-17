@@ -54,7 +54,7 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
 
   const initializeEmployeeSalaries = () => {
     const salaries = selectedEmployees.map(emp => ({
-      employee_id: emp.id,
+      employee_id: String(emp.id),
       employee_name: emp.name,
       actual_salary_credited: 0,
     }));
@@ -76,7 +76,7 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
         setEmployeeSalaries(prev => 
           prev.map(emp => {
             const existing = response.data.data.find((item: ActualSalaryCredited) => 
-              item.employee_id === emp.employee_id
+              String(item.employee_id) === emp.employee_id
             );
             return {
               ...emp,
@@ -171,7 +171,7 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
   };
 
   const getEmployeeStatus = (employeeId: string) => {
-    const existing = existingData.find(item => item.employee_id === employeeId);
+    const existing = existingData.find(item => String(item.employee_id) === employeeId);
     return existing ? 'updated' : 'new';
   };
 
@@ -232,7 +232,7 @@ const ActualSalaryUpload: React.FC<ActualSalaryUploadProps> = ({
                     <div className="flex-1">
                       <div className="font-medium">{employee.employee_name}</div>
                       <div className="text-sm text-muted-foreground">
-                        Employee ID: {selectedEmployees.find(emp => emp.id === employee.employee_id)?.employee_id}
+                        Employee ID: {selectedEmployees.find(emp => String(emp.id) === employee.employee_id)?.employee_id}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

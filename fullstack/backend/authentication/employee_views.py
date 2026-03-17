@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import check_password, identify_hasher, make_password
@@ -18,6 +18,15 @@ from attendance.models import AttendanceRecord, Holiday
 from attendance.services import generate_monthly_summary
 
 
+class IsAuthenticatedOrEmployeeSession(BasePermission):
+    def has_permission(self, request, view):
+        if request.user and request.user.is_authenticated:
+            return True
+        if request.session and request.session.get('employee_id'):
+            return True
+        return False
+
+
 def _validate_password_strength(password: str) -> str | None:
     if len(password or "") < 8:
         return "Password must be at least 8 characters long."
@@ -25,7 +34,7 @@ def _validate_password_strength(password: str) -> str | None:
         return "Password must include a lowercase letter."
     if not re.search(r"[A-Z]", password):
         return "Password must include an uppercase letter."
-    if not re.search(r"\d", password):
+    if not re.search(r"\\d", password):
         return "Password must include a number."
     return None
 
@@ -95,7 +104,7 @@ def employee_login_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticatedOrEmployeeSession])
 def employee_payslips_view(request):
     employee_id, error_response = _resolve_employee_id(request)
     if error_response:
@@ -137,7 +146,7 @@ def sign_out_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticatedOrEmployeeSession])
 def attendance_history_view(request):
     employee_id, error_response = _resolve_employee_id(request)
     if error_response:
@@ -182,17 +191,20 @@ def send_invitation_view(request):
             'message': 'Employee not found'
         }, status=status.HTTP_404_NOT_FOUND)
 
-    if not employee.email:
+    if not employee.email and not employee.personal_email:
         return Response({
             'success': False,
-            'message': 'Employee does not have an official email configured.'
+            'message': 'Employee does not have any email address configured.'
         }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Prefer personal email for delivery; fall back to system email
+    recipient_email = employee.personal_email or employee.email
 
     token = EmployeeInvitation.generate_token()
     invitation, _ = EmployeeInvitation.objects.update_or_create(
         employee=employee,
         defaults={
-            'email': employee.email,
+            'email': recipient_email,
             'token': token,
             'status': 'PENDING',
             'expires_at': timezone.now() + timedelta(hours=48),
@@ -216,12 +228,12 @@ def send_invitation_view(request):
             subject=subject,
             message=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[employee.email],
+            recipient_list=[recipient_email],
             fail_silently=False,
         )
         return Response({
             'success': True,
-            'message': f'Invitation sent successfully to {employee.email}.',
+            'message': f'Invitation sent successfully to {recipient_email}.',
             'email_sent': True,
         }, status=status.HTTP_200_OK)
     except Exception as exc:
@@ -292,90 +304,100 @@ def release_payslip_view(request):
 @permission_classes([AllowAny])
 @csrf_exempt
 def activate_account_view(request):
-    token = (request.data.get('token') or '').strip()
-    password = request.data.get('password') or ''
-    confirm_password = request.data.get('confirm_password') or ''
-
-    if not token:
-        return Response({
-            'success': False,
-            'message': 'Activation token is required.'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    if not password or not confirm_password:
-        return Response({
-            'success': False,
-            'message': 'Password and confirm password are required.'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    if password != confirm_password:
-        return Response({
-            'success': False,
-            'message': 'Passwords do not match.'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    strength_error = _validate_password_strength(password)
-    if strength_error:
-        return Response({
-            'success': False,
-            'message': strength_error
-        }, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        invitation = EmployeeInvitation.objects.select_related('employee').get(token=token)
-    except EmployeeInvitation.DoesNotExist:
+        token = (request.data.get('token') or '').strip()
+        password = request.data.get('password') or ''
+        confirm_password = request.data.get('confirm_password') or ''
+
+        if not token:
+            return Response({
+                'success': False,
+                'message': 'Activation token is required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if not password or not confirm_password:
+            return Response({
+                'success': False,
+                'message': 'Password and confirm password are required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if password != confirm_password:
+            return Response({
+                'success': False,
+                'message': 'Passwords do not match.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        strength_error = _validate_password_strength(password)
+        if strength_error:
+            return Response({
+                'success': False,
+                'message': strength_error
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            invitation = EmployeeInvitation.objects.select_related('employee').get(token=token)
+        except EmployeeInvitation.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': 'Invalid activation token.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if invitation.status == 'ACTIVATED':
+            return Response({
+                'success': False,
+                'message': 'This activation link has already been used.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if invitation.is_expired:
+            invitation.status = 'EXPIRED'
+            invitation.save(update_fields=['status'])
+            return Response({
+                'success': False,
+                'message': 'Activation link has expired.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        employee = invitation.employee
+        now = timezone.now()
+        employee.password = make_password(password)
+        employee.password_changed = True
+        employee.password_set_date = now
+        employee.account_activated = True
+        employee.account_activated_at = now
+        employee.save(update_fields=[
+            'password',
+            'password_changed',
+            'password_set_date',
+            'account_activated',
+            'account_activated_at',
+            'updated_at'
+        ])
+
+        invitation.status = 'ACTIVATED'
+        invitation.activated_at = now
+        invitation.save(update_fields=['status', 'activated_at'])
+
+        # Keep employee in session so onboarding can run immediately after activation.
+        request.session['employee_id'] = employee.id
+        request.session.pop('admin_id', None)
+
+        return Response({
+            'success': True,
+            'message': 'Account activated successfully.',
+            'employee_id': employee.id
+        }, status=status.HTTP_200_OK)
+
+    except Exception as exc:
+        import logging
+        logging.getLogger('authentication').exception('Failed to activate employee account for token: %s', token)
         return Response({
             'success': False,
-            'message': 'Invalid activation token.'
-        }, status=status.HTTP_404_NOT_FOUND)
-
-    if invitation.status == 'ACTIVATED':
-        return Response({
-            'success': False,
-            'message': 'This activation link has already been used.'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    if invitation.is_expired:
-        invitation.status = 'EXPIRED'
-        invitation.save(update_fields=['status'])
-        return Response({
-            'success': False,
-            'message': 'Activation link has expired.'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-    employee = invitation.employee
-    now = timezone.now()
-    employee.password = make_password(password)
-    employee.password_changed = True
-    employee.password_set_date = now
-    employee.account_activated = True
-    employee.account_activated_at = now
-    employee.save(update_fields=[
-        'password',
-        'password_changed',
-        'password_set_date',
-        'account_activated',
-        'account_activated_at',
-        'updated_at'
-    ])
-
-    invitation.status = 'ACTIVATED'
-    invitation.activated_at = now
-    invitation.save(update_fields=['status', 'activated_at'])
-
-    # Keep employee in session so onboarding can run immediately after activation.
-    request.session['employee_id'] = employee.id
-    request.session.pop('admin_id', None)
-
-    return Response({
-        'success': True,
-        'message': 'Account activated successfully.',
-        'employee_id': employee.id
-    }, status=status.HTTP_200_OK)
+            'message': 'Internal server error during activation. Please try again or contact support.',
+            'error': str(exc)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def complete_onboarding_view(request):
     employee_id, error_response = _resolve_employee_id(request)
@@ -433,7 +455,7 @@ def complete_onboarding_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def employee_profile_view(request):
     employee_id, error_response = _resolve_employee_id(request)
     if error_response:
@@ -472,7 +494,7 @@ def employee_profile_view(request):
 
 
 @api_view(['PUT', 'PATCH'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
 def update_employee_profile_view(request):
     employee_id, error_response = _resolve_employee_id(request)
@@ -635,7 +657,7 @@ def _verify_employee_password(employee: Employee, raw_password: str) -> bool:
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticatedOrEmployeeSession])
 def employee_dashboard_view(request):
     """
     Employee dashboard data - team stats, late arrivals, holidays, team leave.
@@ -760,3 +782,4 @@ def employee_dashboard_view(request):
             }
         }
     }, status=status.HTTP_200_OK)
+

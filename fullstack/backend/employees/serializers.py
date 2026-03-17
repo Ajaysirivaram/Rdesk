@@ -122,20 +122,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return 'Shift Assigned' if getattr(obj, 'shift_id', None) else 'Not Assigned'
     
     def validate_employee_id(self, value):
-        """
-        Validate employee ID uniqueness.
-        """
         normalized = value.strip().upper()
         if self.instance:
-            # For updates, exclude current instance
             if Employee.objects.filter(employee_id=normalized).exclude(id=self.instance.id).exists():
                 raise serializers.ValidationError("Employee ID already exists.")
         else:
-            # For creates, allow reactivation of a soft-deleted employee with same ID.
-            existing = Employee.objects.filter(employee_id=normalized).first()
-            if existing and existing.is_active:
+            if Employee.objects.filter(employee_id=normalized).exists():
                 raise serializers.ValidationError("Employee ID already exists.")
-
         return normalized
     
     def validate_department_id(self, value):
@@ -171,9 +164,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
         if self.instance is None:
             required_fields = ['employee_id', 'name', 'email', 'location', 'doj']
             missing = [field for field in required_fields if not attrs.get(field)]
+            # personal_email is required on create so invitation can be delivered
+            if not (attrs.get('personal_email') or '').strip():
+                missing.append('personal_email')
             if missing:
                 raise serializers.ValidationError({
-                    field: ["This field is required for onboarding invite flow."]
+                    field: ["This field is required."]
                     for field in missing
                 })
         return attrs
@@ -207,6 +203,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return digits
 
     def _send_activation_invitation(self, employee: Employee, token: str):
+        # Prefer personal email; fall back to system email if not set
+        recipient = employee.personal_email or employee.email
+        if not recipient:
+            raise ValueError("Employee has no email address to send invitation to.")
         activation_link = f"{settings.FRONTEND_URL}/activate/{token}"
         subject = "RDesk Account Activation - BlackRoth"
         message = (
@@ -221,16 +221,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
             subject,
             message,
             settings.DEFAULT_FROM_EMAIL,
-            [employee.email],
+            [recipient],
             fail_silently=False,
         )
     
     def create(self, validated_data):
-        """
-        Create employee with minimal required fields and trigger activation invitation.
-        """
-        self._reactivated_employee = False
-
         department_id = validated_data.pop('department_id', None)
         shift_id = validated_data.pop('shift_id', None)
         if department_id:
@@ -257,43 +252,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
         existing_employee = Employee.objects.filter(employee_id=employee_id).first()
         if existing_employee:
-            if existing_employee.is_active:
-                raise serializers.ValidationError({'employee_id': ['Employee ID already exists.']})
+            raise serializers.ValidationError({'employee_id': ['Employee ID already exists.']})
 
-            self._reactivated_employee = True
-            existing_employee.department = department
-            existing_employee.name = validated_data.get('name', existing_employee.name)
-            existing_employee.email = validated_data.get('email', existing_employee.email)
-            existing_employee.location = validated_data.get('location', existing_employee.location)
-            existing_employee.doj = validated_data.get('doj', existing_employee.doj)
-            existing_employee.position = validated_data.get('position') or existing_employee.position or 'Employee'
-            existing_employee.dob = validated_data.get('dob') or existing_employee.dob or date(1990, 1, 1)
-            existing_employee.pan = validated_data.get('pan') or existing_employee.pan or self._default_pan(employee_id)
-            existing_employee.bank_account = (
-                validated_data.get('bank_account')
-                or existing_employee.bank_account
-                or self._default_bank_account(employee_id)
-            )
-            existing_employee.bank_ifsc = validated_data.get('bank_ifsc') or existing_employee.bank_ifsc or 'PEND0123456'
-            existing_employee.pay_mode = validated_data.get('pay_mode') or existing_employee.pay_mode or 'NEFT'
-            existing_employee.pf_number = validated_data.get('pf_number', existing_employee.pf_number or '')
-            existing_employee.health_card_no = validated_data.get('health_card_no', existing_employee.health_card_no or '')
-            existing_employee.account_activated = False
-            existing_employee.account_activated_at = None
-            existing_employee.onboarding_completed = False
-            existing_employee.password = None
-            existing_employee.personal_email = None
-            existing_employee.is_active = True
-            existing_employee.save()
-            employee = existing_employee
-        else:
-            employee = super().create(validated_data)
+        employee = super().create(validated_data)
 
         token = EmployeeInvitation.generate_token()
         invitation, _ = EmployeeInvitation.objects.update_or_create(
             employee=employee,
             defaults={
-                'email': employee.email,
+                'email': employee.personal_email or employee.email,
                 'token': token,
                 'status': 'PENDING',
                 'expires_at': timezone.now() + timedelta(hours=48),

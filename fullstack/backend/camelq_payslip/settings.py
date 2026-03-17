@@ -22,7 +22,7 @@ DEBUG = str(config("DEBUG", default="True")).strip().lower() in ("true", "1", "y
 
 ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
-    default="localhost,127.0.0.1",
+    default="*",
     cast=lambda v: [s.strip() for s in v.split(",")],
 )
 
@@ -119,7 +119,8 @@ AUTH_USER_MODEL = "authentication.AdminUser"
 # --- REST Framework ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "camelq_payslip.authentication.CSRFExemptSessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -137,15 +138,14 @@ REST_FRAMEWORK = {
 # --- CSRF / CORS ---
 CSRF_EXEMPT_URLS = [r"^api/.*$"]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-]
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173",
+    cast=lambda v: [s.strip() for s in v.split(",")],
+)
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 
@@ -167,11 +167,9 @@ FRONTEND_URL = str(config("FRONTEND_URL", default="http://localhost:5173")).stri
 # --- Email Configuration ---
 EMAIL_HOST = str(config("EMAIL_HOST", default="localhost")).strip()
 EMAIL_PORT = int(str(config("EMAIL_PORT", default="587")).strip())
-EMAIL_USE_TLS = str(config("EMAIL_USE_TLS", default="True")).strip().lower() in ("true", "1", "yes", "on")
-EMAIL_USE_SSL = str(config("EMAIL_USE_SSL", default="False")).strip().lower() in ("true", "1", "yes", "on")
+EMAIL_USE_TLS = str(config("EMAIL_USE_TLS", default="True")).strip().lower() in ("true","1","yes","on")
 EMAIL_HOST_USER = str(config("EMAIL_HOST_USER", default="")).strip()
 EMAIL_HOST_PASSWORD = str(config("EMAIL_HOST_PASSWORD", default="")).strip()
-
 configured_email_backend = str(config("EMAIL_BACKEND", default="")).strip()
 if configured_email_backend:
     EMAIL_BACKEND = configured_email_backend

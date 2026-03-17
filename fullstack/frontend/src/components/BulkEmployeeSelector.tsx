@@ -96,7 +96,7 @@ const BulkEmployeeSelector: React.FC<BulkEmployeeSelectorProps> = ({
     // Filter by department
     if (selectedDepartment !== 'all') {
       filtered = filtered.filter(employee =>
-        employee.department.id === selectedDepartment
+        String(employee.department.id) === selectedDepartment
       );
     }
 
@@ -139,7 +139,7 @@ const BulkEmployeeSelector: React.FC<BulkEmployeeSelectorProps> = ({
     onSelectionChange([]);
   };
 
-  const getDepartmentName = (departmentId: string) => {
+  const getDepartmentName = (departmentId: number) => {
     const dept = departments.find(d => d.id === departmentId);
     return dept ? dept.department_name : 'Unknown';
   };
@@ -208,7 +208,7 @@ const BulkEmployeeSelector: React.FC<BulkEmployeeSelectorProps> = ({
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
                   {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
+                    <SelectItem key={dept.id} value={String(dept.id)}>
                       {dept.department_name}
                     </SelectItem>
                   ))}

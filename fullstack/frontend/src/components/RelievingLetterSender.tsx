@@ -9,7 +9,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { Upload, Send, CheckCircle, XCircle } from 'lucide-react';
-import api from '../services/api';
+import { employeeAdminAPI } from '../services/api';
 
 interface RelievingLetterSenderProps {
   onSuccess?: () => void;
@@ -95,11 +95,7 @@ const RelievingLetterSender: React.FC<RelievingLetterSenderProps> = ({ onSuccess
       formDataToSend.append('relieving_letter', formData.relieving_letter);
       formDataToSend.append('experience_letter', formData.experience_letter);
 
-      const response = await api.post('/employees/send-relieving-letter/', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await employeeAdminAPI.sendRelievingLetter(formDataToSend);
 
       if (response.data.success) {
         setResult({
