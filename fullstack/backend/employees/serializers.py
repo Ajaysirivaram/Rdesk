@@ -208,14 +208,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     def _send_activation_invitation(self, employee: Employee, token: str):
         activation_link = f"{settings.FRONTEND_URL}/activate/{token}"
-        subject = "RothDesk Account Activation - BlackRoth"
+        subject = "RDesk Account Activation - BlackRoth"
         message = (
             f"Hello {employee.name},\n\n"
-            "Your RothDesk employee account has been created.\n"
+            "Your RDesk employee account has been created.\n"
             "Please activate your account and complete onboarding using this link:\n\n"
             f"{activation_link}\n\n"
             "This activation link expires in 48 hours.\n\n"
-            "Regards,\nRothDesk Team"
+            "Regards,\nRDesk Team"
         )
         send_mail(
             subject,

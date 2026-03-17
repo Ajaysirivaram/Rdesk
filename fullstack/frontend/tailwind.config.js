@@ -18,7 +18,7 @@ module.exports = {
     },
     extend: {
       colors: {
-        // RothDesk Brand Colors
+        // RDesk Brand Colors
         roth: {
           primary: '#000000',
           secondary: '#2F2F2F',

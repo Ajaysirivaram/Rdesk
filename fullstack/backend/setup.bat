@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 RothDesk Payslip System - Windows Setup
+echo 🚀 RDesk Payslip System - Windows Setup
 echo ==========================================
 
 REM Check if Python is installed

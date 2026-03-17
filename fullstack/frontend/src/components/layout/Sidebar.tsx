@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
               className="text-xl font-bold text-white" 
               style={{ fontFamily: '"Droid Serif", serif' }}
             >
-              RothDesk
+              RDesk
             </h1>
           )}
         </div>
@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       {!isCollapsed && (
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
           <div className="text-xs text-gray-400 text-center">
-            <p className="font-medium text-roth-accent">RothDesk HRMS</p>
+            <p className="font-medium text-roth-accent">RDesk HRMS</p>
             <p>v1.0.0</p>
           </div>
         </div>

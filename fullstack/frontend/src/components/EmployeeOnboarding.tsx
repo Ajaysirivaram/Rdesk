@@ -125,8 +125,8 @@ const EmployeeOnboarding: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <img src="/logo.svg" alt="RothDesk Logo" className="h-10 w-auto" />
-              <h1 className="text-xl font-bold text-primary">RothDesk</h1>
+              <img src="/logo.svg" alt="RDesk Logo" className="h-10 w-auto" />
+              <h1 className="text-xl font-bold text-primary">RDesk</h1>
             </div>
           </div>
         </div>

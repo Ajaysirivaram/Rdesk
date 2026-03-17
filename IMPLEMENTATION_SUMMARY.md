@@ -1,8 +1,8 @@
-# RothDesk Employee Portal - Complete Implementation Summary
+# RDesk Employee Portal - Complete Implementation Summary
 
 ## Project Overview
 
-A complete Employee Portal has been successfully implemented for the RothDesk Payroll System. This system allows employees to create accounts, complete onboarding, track attendance, and access their payslips.
+A complete Employee Portal has been successfully implemented for the RDesk Payroll System. This system allows employees to create accounts, complete onboarding, track attendance, and access their payslips.
 
 ---
 
@@ -200,7 +200,7 @@ Allows frontend to make API calls to backend during development.
 
 ### Invitation Email
 
-**Subject**: "Welcome to RothDesk – Activate Your Employee Account"
+**Subject**: "Welcome to RDesk – Activate Your Employee Account"
 
 **Content**:
 - Personalized greeting

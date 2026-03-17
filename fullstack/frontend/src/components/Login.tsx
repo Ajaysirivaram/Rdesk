@@ -56,7 +56,7 @@ const Login: React.FC = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-primary" style={{ fontFamily: '"Droid Serif", serif' }}>
-            RothDesk
+            RDesk
           </CardTitle>
           <p className="text-muted-foreground">
             Admin Login

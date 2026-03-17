@@ -1,6 +1,6 @@
-# RothDesk Employee Portal - Complete Implementation
+# RDesk Employee Portal - Complete Implementation
 
-Welcome! This document provides a complete overview of the newly implemented Employee Portal for the RothDesk Payroll System.
+Welcome! This document provides a complete overview of the newly implemented Employee Portal for the RDesk Payroll System.
 
 ---
 
@@ -123,7 +123,7 @@ npm run dev                           # Runs on http://localhost:5173
 
 ```
 ┌─────────────────────────────────────────────────┐
-│           RothDesk Payroll System               │
+│           RDesk Payroll System               │
 ├─────────────────────────────────────────────────┤
 │                                                 │
 │  ┌──────────────────────────────────────────┐  │
@@ -276,7 +276,7 @@ See `QUICK_START_EMPLOYEE_PORTAL.md` for more troubleshooting.
 ## 📂 File Structure
 
 ```
-RothDesk-v1/
+RDesk-v1/
 ├── backend/
 │   ├── authentication/
 │   │   ├── employee_views.py (NEW)

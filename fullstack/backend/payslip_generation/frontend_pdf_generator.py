@@ -338,7 +338,7 @@ class FrontendPDFGenerator:
                 <!-- Header -->
                 <div class="header">
                     <div class="logo">
-                        <img src="data:image/png;base64,{self._get_logo_base64()}" alt="RothDesk Logo" />
+                        <img src="data:image/png;base64,{self._get_logo_base64()}" alt="RDesk Logo" />
                     </div>
                     <div class="company-info">
                         <h1>BlackRoth Software Solutions Pvt. Ltd.</h1>
@@ -455,7 +455,7 @@ class FrontendPDFGenerator:
                 <div class="footer">
                     <p><strong>Dear Associate</strong>,</p>
                     <p>
-                        We thank you for being part of RothDesk family! Help others looking for jobs – Ask your friends & family to visit our nearest BlackRoth office to submit their resume or email <strong>jobs@blackroth.com</strong>.
+                        We thank you for being part of RDesk family! Help others looking for jobs – Ask your friends & family to visit our nearest BlackRoth office to submit their resume or email <strong>jobs@blackroth.com</strong>.
                     </p>
                     <p>For queries, mail to <strong>info@blackroth.com</strong></p>
                 </div>
@@ -525,7 +525,7 @@ class FrontendPDFGenerator:
         except:
             font = None
         
-        text = "ROTHDESK"
+        text = "RDesk"
         bbox = draw.textbbox((0, 0), text, font=font)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]

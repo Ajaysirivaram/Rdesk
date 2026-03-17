@@ -170,7 +170,7 @@ const PayslipPreview = ({
       {/* Header */}
       <div className="flex flex-row items-center relative" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
         <div className="w-32 flex-shrink-0" style={{ width: '128px', flexShrink: 0 }}>
-          <img src="/logo.png" alt="RothDesk Logo" className="w-full" style={{ width: '100%' }} />
+          <img src="/logo.png" alt="RDesk Logo" className="w-full" style={{ width: '100%' }} />
         </div>
         <div className="flex-grow text-center text-sm" style={{ flexGrow: 1, textAlign: 'center', fontSize: '14px' }}>
           <h1 className="text-2xl font-bold" style={{ fontSize: '24px', fontWeight: 'bold', fontFamily: '"Droid Serif", serif' }}>BlackRoth Software Solutions Pvt. Ltd.</h1>
@@ -292,7 +292,7 @@ const PayslipPreview = ({
       <div className="text-xs text-gray-700 bg-gray-100 border border-gray-300 p-4 rounded-md space-y-2 mt-6">
         <p><strong>Dear Associate</strong>,</p>
         <p>
-          We thank you for being part of RothDesk family! Help others looking for jobs – Ask your friends & family to visit our nearest BlackRoth office to submit their resume or email <strong>jobs@blackroth.com</strong>.
+          We thank you for being part of RDesk family! Help others looking for jobs – Ask your friends & family to visit our nearest BlackRoth office to submit their resume or email <strong>jobs@blackroth.com</strong>.
         </p>
         <p>For queries, mail to <strong>info@blackroth.com</strong></p>
       </div>

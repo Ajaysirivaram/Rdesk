@@ -194,7 +194,7 @@ const EmployeeDashboard: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-primary" style={{ fontFamily: '"Droid Serif", serif' }}>
-                  RothDesk
+                  RDesk
                 </h1>
               </div>
             </div>

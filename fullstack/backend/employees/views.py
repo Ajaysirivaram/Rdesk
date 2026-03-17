@@ -51,7 +51,7 @@ def _generate_secure_temp_password(length: int = 12) -> str:
 
 
 def _build_password_reset_email(employee: Employee, plain_password: str) -> tuple[str, str]:
-    subject = 'Your RothDesk Account Password Reset'
+    subject = 'Your RDesk Account Password Reset'
     body = (
         f'Hello {employee.name},\n\n'
         'Your account password has been reset.\n\n'
@@ -59,9 +59,9 @@ def _build_password_reset_email(employee: Employee, plain_password: str) -> tupl
         f'Temporary Password: {plain_password}\n\n'
         'Please login and change your password after first login.\n\n'
         'Login URL:\n'
-        'https://rothdesk.blackroth.in/login\n\n'
+        'https://RDesk.blackroth.in/login\n\n'
         'Regards\n'
-        'RothDesk HR Team'
+        'RDesk HR Team'
     )
     return subject, body
 

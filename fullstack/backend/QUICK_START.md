@@ -1,4 +1,4 @@
-# 🚀 RothDesk Payslip System - Quick Start Guide
+# 🚀 RDesk Payslip System - Quick Start Guide
 
 ## Prerequisites
 - Python 3.8+
@@ -18,7 +18,7 @@ pip install -r requirements.txt
 ```bash
 # Create MySQL database
 mysql -u root -p
-CREATE DATABASE rothdesk_payslip;
+CREATE DATABASE RDesk_payslip;
 exit
 ```
 
@@ -135,7 +135,7 @@ celery -A camelq_payslip worker --loglevel=debug
 ## 📁 Project Structure
 ```
 backend/
-├── camelq_payslip/          # Main RothDesk Django project
+├── camelq_payslip/          # Main RDesk Django project
 ├── authentication/          # Admin authentication
 ├── departments/             # Department management
 ├── employees/               # Employee management

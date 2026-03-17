@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ items, collapsed, onToggle }) => {
         <div className="flex items-center gap-2 min-w-0">
           <img
             src="/logo.svg"
-            alt="RothDesk"
+            alt="RDesk"
             className={collapsed ? 'h-8 w-auto shrink-0' : 'h-10 w-auto shrink-0'}
           />
         </div>

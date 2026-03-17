@@ -1,4 +1,4 @@
-# 🚀 RothDesk Payslip System - Complete Setup Guide
+# 🚀 RDesk Payslip System - Complete Setup Guide
 
 ## 📋 Prerequisites
 
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 mysql -u root -p
 
 # Create database
-CREATE DATABASE rothdesk_payslip;
+CREATE DATABASE RDesk_payslip;
 exit
 ```
 
@@ -107,7 +107,7 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Database Configuration
-DB_NAME=rothdesk_payslip
+DB_NAME=RDesk_payslip
 DB_USER=root
 DB_PASSWORD=your-mysql-password
 DB_HOST=localhost
@@ -284,5 +284,5 @@ After successful setup:
 5. **Configure email settings** for notifications
 6. **Set up monitoring** and logging
 
-Your RothDesk Payslip System is now ready for production use! 🎉
+Your RDesk Payslip System is now ready for production use! 🎉
 

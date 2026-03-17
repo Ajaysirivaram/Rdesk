@@ -1,5 +1,5 @@
 """
-ASGI config for RothDesk Payslip project.
+ASGI config for RDesk Payslip project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

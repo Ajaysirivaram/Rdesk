@@ -1,7 +1,7 @@
 # Attendance Module Review & Stabilization Plan
 
 ## Task Overview
-Review and stabilize the newly implemented Attendance Management Module in the RothDesk HRMS project.
+Review and stabilize the newly implemented Attendance Management Module in the RDesk HRMS project.
 
 ---
 
