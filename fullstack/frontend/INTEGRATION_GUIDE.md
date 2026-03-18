@@ -173,5 +173,5 @@ Your frontend and backend are now fully integrated and ready for:
    - Set up proper domain names
    - Configure SSL certificates
 
-**Your RothDesk Payslip System is now fully integrated!** 🎉
+**Your RDesk Payslip System is now fully integrated!** 🎉
 

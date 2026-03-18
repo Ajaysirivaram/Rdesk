@@ -4,7 +4,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, UserCircle, Clock3 } from 'lucide-react';
+import { LayoutDashboard, FileText, UserCircle, Clock3, CalendarDays } from 'lucide-react';
 import Sidebar, { type SidebarItem } from '@/components/Sidebar';
 import Header from '@/components/Header';
 
@@ -25,6 +25,7 @@ const EmployeeLayout: React.FC = () => {
     () => [
       { label: 'Dashboard', path: '/employee/dashboard', icon: LayoutDashboard },
       { label: 'Attendance', path: '/employee/attendance', icon: Clock3 },
+      { label: 'Leaves', path: '/employee/leaves', icon: CalendarDays },
       { label: 'Payslips', path: '/employee/payslips', icon: FileText },
       { label: 'Profile', path: '/employee/profile', icon: UserCircle },
     ],

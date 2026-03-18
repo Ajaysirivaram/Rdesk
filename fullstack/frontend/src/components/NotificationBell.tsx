@@ -15,15 +15,7 @@ interface AppNotification {
   created_at: string;
 }
 
-const fallbackNotifications: AppNotification[] = [
-  {
-    id: 1,
-    title: 'Payslip released',
-    message: 'Monthly payroll is now available.',
-    is_read: false,
-    created_at: new Date().toISOString(),
-  },
-];
+const POLL_INTERVAL_MS = 30000;
 
 const NotificationBell: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -36,6 +28,15 @@ const NotificationBell: React.FC = () => {
   );
 
   useEffect(() => {
+    void loadNotifications();
+    const interval = window.setInterval(() => {
+      void loadNotifications();
+    }, POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     if (open) {
       void loadNotifications();
     }
@@ -46,13 +47,13 @@ const NotificationBell: React.FC = () => {
       setLoading(true);
       const response = await hrmsApi.getNotifications();
       if (!response.ok) {
-        setItems(fallbackNotifications);
+        setItems([]);
         return;
       }
       const data = await getJson<{ notifications?: AppNotification[] }>(response);
       setItems(data.notifications || []);
     } catch (error) {
-      setItems(fallbackNotifications);
+      setItems([]);
     } finally {
       setLoading(false);
     }

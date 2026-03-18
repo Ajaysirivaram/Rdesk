@@ -1,4 +1,4 @@
-# RothDesk Payslip Management System
+# RDesk Payslip Management System
 
 A comprehensive full-stack payslip management system with QR code verification, built with Django REST API and React frontend.
 
@@ -41,7 +41,7 @@ A comprehensive full-stack payslip management system with QR code verification, 
 ## 📁 Project Structure
 
 ```
-RothDesk Payslip System/
+RDesk Payslip System/
 ├── fullstack/
 │   ├── backend/                 # Django API
 │   │   ├── authentication/     # User authentication
@@ -143,7 +143,7 @@ EMAIL_HOST_PASSWORD=your-app-password
 ```
 
 ### Database Configuration
-The system uses MySQL by default. To use PostgreSQL or SQLite, update the database settings in `rothdesk_payslip/settings.py`.
+The system uses MySQL by default. To use PostgreSQL or SQLite, update the database settings in `RDesk_payslip/settings.py`.
 
 ## 📱 Usage
 

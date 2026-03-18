@@ -1,4 +1,4 @@
-# RothDesk Employee Portal - Files Changed Summary
+# RDesk Employee Portal - Files Changed Summary
 
 ## Overview
 This document lists all files that were created or modified as part of the Employee Portal implementation.
@@ -200,7 +200,7 @@ This document lists all files that were created or modified as part of the Emplo
   - Next steps recommendations
   - Support resources
 
-#### 3. `RothDesk-v1/IMPLEMENTATION_SUMMARY.md` (NEW - ~500 lines)
+#### 3. `RDesk-v1/IMPLEMENTATION_SUMMARY.md` (NEW - ~500 lines)
 - **Content**:
   - Complete implementation overview
   - Backend models and changes

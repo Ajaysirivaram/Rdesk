@@ -123,7 +123,7 @@ const WelcomeHero: React.FC = () => {
           {greeting}, Admin!
         </h1>
         <p className="text-gray-300 mb-8 max-w-xl">
-          Welcome to RothDesk - Your complete HR & Payroll management solution. 
+          Welcome to RDesk - Your complete HR & Payroll management solution. 
           Here's what's happening with your organization today.
         </p>
 

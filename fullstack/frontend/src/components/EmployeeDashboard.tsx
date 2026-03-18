@@ -14,6 +14,7 @@ import LeaveManagement from './LeaveManagement';
 import DocumentVault from './DocumentVault';
 import EmployeeDirectory from './EmployeeDirectory';
 import NotificationCenter from './NotificationCenter';
+import BrandMark from './BrandMark';
 
 interface Employee {
   id: number;
@@ -176,16 +177,7 @@ const EmployeeDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shadow-md">
-                <span className="text-primary-foreground font-bold text-lg" style={{ fontFamily: '"Droid Serif", serif' }}>
-                  RD
-                </span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-primary" style={{ fontFamily: '"Droid Serif", serif' }}>
-                  RothDesk
-                </h1>
-              </div>
+              <BrandMark compact />
             </div>
 
             <div className="flex items-center gap-3">

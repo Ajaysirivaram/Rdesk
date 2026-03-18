@@ -22,6 +22,23 @@ from authentication.models import AdminUser
 from payslip_generation.models import Payslip
 from departments.models import Department
 
+DEFAULT_LEAVE_TYPES = [
+    ("Earned Leave", 18),
+    ("Sick Leave", 12),
+    ("Casual Leave", 12),
+]
+
+
+def _ensure_default_leave_types():
+    for name, max_days in DEFAULT_LEAVE_TYPES:
+        LeaveType.objects.get_or_create(
+            name=name,
+            defaults={
+                "max_days_per_year": max_days,
+                "is_active": True,
+            },
+        )
+
 # =====================================================
 # LEAVE MANAGEMENT ENDPOINTS
 # =====================================================
@@ -114,6 +131,7 @@ def get_my_leave_requests(request):
 def get_leave_types(request):
     """Get all active leave types"""
     try:
+        _ensure_default_leave_types()
         leave_types = LeaveType.objects.filter(is_active=True)
         
         data = [{
@@ -345,28 +363,66 @@ def download_document(request, doc_id):
 # NOTIFICATION ENDPOINTS
 # =====================================================
 
+def _get_admin_leave_notification_reads(request) -> set[int]:
+    raw_ids = request.session.get('admin_notification_reads', [])
+    try:
+        return {int(item) for item in raw_ids}
+    except (TypeError, ValueError):
+        return set()
+
+
+def _set_admin_leave_notification_reads(request, values: set[int]) -> None:
+    request.session['admin_notification_reads'] = sorted(values)
+    request.session.modified = True
+
+
+def _build_admin_notifications(request):
+    read_ids = _get_admin_leave_notification_reads(request)
+    pending_leaves = LeaveRequest.objects.filter(status='PENDING').select_related('employee', 'leave_type')[:50]
+
+    notifications = []
+    for leave in pending_leaves:
+        leave_name = leave.leave_type.name if leave.leave_type else 'Leave'
+        notifications.append({
+            'id': leave.id,
+            'type': 'LEAVE_REQUEST',
+            'title': f'New Leave Request: {leave.employee.name}',
+            'message': (
+                f'{leave.employee.name} applied for {leave_name} '
+                f'from {leave.start_date} to {leave.end_date}.'
+            ),
+            'is_read': leave.id in read_ids,
+            'created_at': leave.created_at.isoformat(),
+        })
+
+    return notifications
+
 @require_http_methods(["GET"])
 def get_notifications(request):
-    """Get employee notifications"""
+    """Get employee or admin notifications"""
     try:
         employee_id = request.session.get('employee_id')
-        
-        if not employee_id:
-            return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
-        
-        employee = get_object_or_404(Employee, id=employee_id)
-        notifications = Notification.objects.filter(employee=employee)[:50]
-        
-        data = [{
-            'id': notif.id,
-            'type': notif.notification_type,
-            'title': notif.title,
-            'message': notif.message,
-            'is_read': notif.is_read,
-            'created_at': notif.created_at.isoformat(),
-        } for notif in notifications]
-        
-        return JsonResponse({'success': True, 'notifications': data})
+        admin_id = request.session.get('admin_id')
+
+        if employee_id:
+            employee = get_object_or_404(Employee, id=employee_id)
+            notifications = Notification.objects.filter(employee=employee)[:50]
+
+            data = [{
+                'id': notif.id,
+                'type': notif.notification_type,
+                'title': notif.title,
+                'message': notif.message,
+                'is_read': notif.is_read,
+                'created_at': notif.created_at.isoformat(),
+            } for notif in notifications]
+
+            return JsonResponse({'success': True, 'notifications': data})
+
+        if admin_id:
+            return JsonResponse({'success': True, 'notifications': _build_admin_notifications(request)})
+
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
     
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -374,17 +430,21 @@ def get_notifications(request):
 
 @require_http_methods(["GET"])
 def get_unread_notification_count(request):
-    """Get unread notification count"""
+    """Get unread notification count for employee or admin"""
     try:
         employee_id = request.session.get('employee_id')
-        
-        if not employee_id:
-            return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
-        
-        employee = get_object_or_404(Employee, id=employee_id)
-        count = Notification.objects.filter(employee=employee, is_read=False).count()
-        
-        return JsonResponse({'success': True, 'unread_count': count})
+        admin_id = request.session.get('admin_id')
+
+        if employee_id:
+            employee = get_object_or_404(Employee, id=employee_id)
+            count = Notification.objects.filter(employee=employee, is_read=False).count()
+            return JsonResponse({'success': True, 'unread_count': count})
+
+        if admin_id:
+            count = sum(1 for item in _build_admin_notifications(request) if not item['is_read'])
+            return JsonResponse({'success': True, 'unread_count': count})
+
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
     
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -392,22 +452,29 @@ def get_unread_notification_count(request):
 
 @require_http_methods(["POST"])
 def mark_notification_as_read(request, notif_id):
-    """Mark notification as read"""
+    """Mark notification as read for employee or admin"""
     try:
         employee_id = request.session.get('employee_id')
-        
-        if not employee_id:
-            return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
-        
-        notification = get_object_or_404(Notification, id=notif_id)
-        
-        if notification.employee.id != int(employee_id):
-            return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
-        
-        notification.is_read = True
-        notification.save()
-        
-        return JsonResponse({'success': True, 'message': 'Notification marked as read'})
+        admin_id = request.session.get('admin_id')
+
+        if employee_id:
+            notification = get_object_or_404(Notification, id=notif_id)
+
+            if notification.employee.id != int(employee_id):
+                return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
+
+            notification.is_read = True
+            notification.save()
+
+            return JsonResponse({'success': True, 'message': 'Notification marked as read'})
+
+        if admin_id:
+            read_ids = _get_admin_leave_notification_reads(request)
+            read_ids.add(int(notif_id))
+            _set_admin_leave_notification_reads(request, read_ids)
+            return JsonResponse({'success': True, 'message': 'Notification marked as read'})
+
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
     
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
@@ -415,17 +482,24 @@ def mark_notification_as_read(request, notif_id):
 
 @require_http_methods(["POST"])
 def mark_all_notifications_as_read(request):
-    """Mark all notifications as read"""
+    """Mark all notifications as read for employee or admin"""
     try:
         employee_id = request.session.get('employee_id')
-        
-        if not employee_id:
-            return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
-        
-        employee = get_object_or_404(Employee, id=employee_id)
-        Notification.objects.filter(employee=employee, is_read=False).update(is_read=True)
-        
-        return JsonResponse({'success': True, 'message': 'All notifications marked as read'})
+        admin_id = request.session.get('admin_id')
+
+        if employee_id:
+            employee = get_object_or_404(Employee, id=employee_id)
+            Notification.objects.filter(employee=employee, is_read=False).update(is_read=True)
+            return JsonResponse({'success': True, 'message': 'All notifications marked as read'})
+
+        if admin_id:
+            pending_ids = {
+                leave.id for leave in LeaveRequest.objects.filter(status='PENDING').only('id')
+            }
+            _set_admin_leave_notification_reads(request, pending_ids)
+            return JsonResponse({'success': True, 'message': 'All notifications marked as read'})
+
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=401)
     
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)

@@ -1,4 +1,4 @@
-# RothDesk SaaS UI Rebuild - TODO List
+# RDesk SaaS UI Rebuild - TODO List
 
 ## Phase 1: Global Layout Structure
 - [ ] 1.1 Create Sidebar component

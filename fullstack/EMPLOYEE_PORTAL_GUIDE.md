@@ -1,8 +1,8 @@
-# RothDesk Employee Portal - Implementation Guide
+# RDesk Employee Portal - Implementation Guide
 
 ## Overview
 
-The Employee Portal has been successfully integrated into the RothDesk Payroll System. This guide outlines all the new features, components, and how to use them.
+The Employee Portal has been successfully integrated into the RDesk Payroll System. This guide outlines all the new features, components, and how to use them.
 
 ## Features Implemented
 

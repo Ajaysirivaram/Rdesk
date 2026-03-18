@@ -1,5 +1,5 @@
 """
-Django settings for RothDesk Payslip project.
+Django settings for RDesk Payslip project.
 """
 
 import os
@@ -84,9 +84,9 @@ WSGI_APPLICATION = "camelq_payslip.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "RothDesk",
-        "USER": "ajaydb",
-        "PASSWORD": "ajay",
+        "NAME": "RDesk",
+        "USER": "root",
+        "PASSWORD": "Blackroth@9922",
         "HOST": "localhost",
         "PORT": "3306",
     }

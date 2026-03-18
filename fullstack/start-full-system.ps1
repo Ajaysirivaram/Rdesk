@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
-# RothDesk Payslip System Startup Script
+# RDesk Payslip System Startup Script
 
-Write-Host "🚀 Starting RothDesk Payslip System" -ForegroundColor Green
+Write-Host "🚀 Starting RDesk Payslip System" -ForegroundColor Green
 Write-Host "==================================" -ForegroundColor Green
 Write-Host ""
 

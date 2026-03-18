@@ -15,7 +15,7 @@ interface HelpLink {
 const helpLinks: HelpLink[] = [
   { 
     title: 'Documentation', 
-    description: 'Learn how to use RothDesk features',
+    description: 'Learn how to use RDesk features',
     icon: BookOpen,
     color: 'bg-blue-100 text-blue-600 hover:bg-blue-200',
   },
@@ -67,7 +67,7 @@ const FooterHelp: React.FC = () => {
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-500">
-            © 2025 RothDesk. All rights reserved.
+            © 2025 RDesk. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-xs text-gray-500 hover:text-roth-accent transition-colors">Privacy Policy</a>

@@ -321,8 +321,8 @@ Open http://localhost:5173/employee/dashboard (when logged in)
 - [ ] fullstack/README_EMPLOYEE_PORTAL.md (NEW)
 - [ ] fullstack/QUICK_START_EMPLOYEE_PORTAL.md (NEW)
 - [ ] fullstack/EMPLOYEE_PORTAL_GUIDE.md (NEW)
-- [ ] RothDesk-v1/IMPLEMENTATION_SUMMARY.md (NEW)
-- [ ] RothDesk-v1/FILES_CHANGED_SUMMARY.md (NEW)
+- [ ] RDesk-v1/IMPLEMENTATION_SUMMARY.md (NEW)
+- [ ] RDesk-v1/FILES_CHANGED_SUMMARY.md (NEW)
 
 ---
 
@@ -387,7 +387,7 @@ Open http://localhost:5173/employee/dashboard (when logged in)
 **Questions? See**:
 - Quick Start: fullstack/QUICK_START_EMPLOYEE_PORTAL.md
 - Complete Guide: fullstack/EMPLOYEE_PORTAL_GUIDE.md
-- Implementation: RothDesk-v1/IMPLEMENTATION_SUMMARY.md
+- Implementation: RDesk-v1/IMPLEMENTATION_SUMMARY.md
 
 ---
 

@@ -1,4 +1,4 @@
-# RothDesk SaaS UI Rebuild Plan
+# RDesk SaaS UI Rebuild Plan
 
 ## Current State Analysis
 
@@ -27,7 +27,7 @@
    - Menu items: Dashboard, Employees, Payroll, Attendance, Leaves, Documents, Directory, Emails, Settings
    - Collapsible on mobile
    - Active state highlighting
-   - RothDesk branding with Droid Serif font
+   - RDesk branding with Droid Serif font
 
 2. **Create Header Component** (`src/components/layout/Header.tsx`)
    - Global search bar
@@ -146,7 +146,7 @@
 - Background: #F8FAFC (slate-50)
 
 ### Typography:
-- Brand: RothDesk / BlackRoth - Droid Serif
+- Brand: RDesk / BlackRoth - Droid Serif
 - UI Text: Inter or system fonts
 
 ### Components:

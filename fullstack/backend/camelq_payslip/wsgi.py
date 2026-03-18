@@ -1,5 +1,5 @@
 """
-WSGI config for RothDesk Payslip project.
+WSGI config for RDesk Payslip project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

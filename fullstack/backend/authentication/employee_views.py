@@ -210,14 +210,23 @@ def send_invitation_view(request):
     )
 
     activation_link = f"{settings.FRONTEND_URL}/activate/{invitation.token}"
-    subject = "RothDesk Account Activation - BlackRoth"
+    subject = "RDesk Account Activation - BlackRoth"
     body = (
+<<<<<<< HEAD
         f"Hello {employee.name},\\n\\n"
         "Your employee account has been created.\\n"
         "Please activate your account using this secure link:\\n\\n"
         f"{activation_link}\\n\\n"
         "This link expires in 48 hours.\\n\\n"
         "Regards,\\nRothDesk Team"
+=======
+        f"Hello {employee.name},\n\n"
+        "Your employee account has been created.\n"
+        "Please activate your account using this secure link:\n\n"
+        f"{activation_link}\n\n"
+        "This link expires in 48 hours.\n\n"
+        "Regards,\nRDesk Team"
+>>>>>>> bd3275a57d3f2a32047605f58ac3fa5b1e182622
     )
 
     try:

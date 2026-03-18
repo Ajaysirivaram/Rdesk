@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { authAPI } from '@/services/api';
+import BrandMark from './BrandMark';
 
 interface LoginApiUser {
   id?: number | string;
@@ -124,12 +125,7 @@ const UnifiedLogin: React.FC = () => {
         <div className="relative z-10 w-full max-w-[420px] p-6 md:p-8">
           <div className="flex flex-col items-center gap-2 mb-6">
            <div className="flex items-center justify-center mb-3">
-              <h1
-                className="text-4xl bg-gradient-to-r from-teal-500 via-pink-500 to-purple-600 bg-clip-text text-transparent"
-                style={{ fontFamily: '"Droid Serif", serif' }}
-              >
-                <span className="font-black text-5xl">R</span>Desk
-              </h1>
+              <BrandMark />
             </div>
             <p className="text-sm font-medium text-slate-500">Payroll & Employee Portal</p>
           </div>

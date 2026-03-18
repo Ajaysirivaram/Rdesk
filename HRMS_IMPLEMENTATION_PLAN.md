@@ -1,4 +1,4 @@
-# RothDesk HRMS Extension - Implementation Plan
+# RDesk HRMS Extension - Implementation Plan
 
 ## Status: IN PROGRESS ✅ VERIFIED
 

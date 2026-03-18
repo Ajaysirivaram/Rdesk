@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 Starting RothDesk Payslip System
+echo 🚀 Starting RDesk Payslip System
 echo ==================================
 
 echo.
