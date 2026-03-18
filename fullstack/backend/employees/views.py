@@ -266,6 +266,9 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
     ordering = ['name']
 
     def create(self, request, *args, **kwargs):
+        """
+        Return clean serializer validation payload for frontend handling.
+        """
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             return Response({
@@ -277,11 +280,20 @@ class EmployeeListCreateView(generics.ListCreateAPIView):
         employee = serializer.save()
         headers = self.get_success_headers(serializer.data)
         response_data = self.get_serializer(employee).data
+        reactivated = bool(getattr(serializer, '_reactivated_employee', False))
         response_data.update({
             'success': True,
-            'message': 'Employee created and activation invitation sent.'
+            'message': (
+                'Employee reactivated and activation invitation sent.'
+                if reactivated
+                else 'Employee created and activation invitation sent.'
+            )
         })
-        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            response_data,
+            status=status.HTTP_200_OK if reactivated else status.HTTP_201_CREATED,
+            headers=headers
+        )
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -294,8 +306,9 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_destroy(self, instance):
-        # Hard delete - removes employee and all related records (CASCADE)
-        instance.delete()
+        # Soft delete - set is_active to False
+        instance.is_active = False
+        instance.save()
 
 
 @api_view(['GET'])

@@ -191,20 +191,17 @@ def send_invitation_view(request):
             'message': 'Employee not found'
         }, status=status.HTTP_404_NOT_FOUND)
 
-    if not employee.email and not employee.personal_email:
+    if not employee.email:
         return Response({
             'success': False,
-            'message': 'Employee does not have any email address configured.'
+            'message': 'Employee does not have an official email configured.'
         }, status=status.HTTP_400_BAD_REQUEST)
-
-    # Prefer personal email for delivery; fall back to system email
-    recipient_email = employee.personal_email or employee.email
 
     token = EmployeeInvitation.generate_token()
     invitation, _ = EmployeeInvitation.objects.update_or_create(
         employee=employee,
         defaults={
-            'email': recipient_email,
+            'email': employee.email,
             'token': token,
             'status': 'PENDING',
             'expires_at': timezone.now() + timedelta(hours=48),
@@ -215,12 +212,12 @@ def send_invitation_view(request):
     activation_link = f"{settings.FRONTEND_URL}/activate/{invitation.token}"
     subject = "RothDesk Account Activation - BlackRoth"
     body = (
-        f"Hello {employee.name},\n\n"
-        "Your employee account has been created.\n"
-        "Please activate your account using this secure link:\n\n"
-        f"{activation_link}\n\n"
-        "This link expires in 48 hours.\n\n"
-        "Regards,\nRothDesk Team"
+        f"Hello {employee.name},\\n\\n"
+        "Your employee account has been created.\\n"
+        "Please activate your account using this secure link:\\n\\n"
+        f"{activation_link}\\n\\n"
+        "This link expires in 48 hours.\\n\\n"
+        "Regards,\\nRothDesk Team"
     )
 
     try:
@@ -228,12 +225,12 @@ def send_invitation_view(request):
             subject=subject,
             message=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipient_email],
+            recipient_list=[employee.email],
             fail_silently=False,
         )
         return Response({
             'success': True,
-            'message': f'Invitation sent successfully to {recipient_email}.',
+            'message': f'Invitation sent successfully to {employee.email}.',
             'email_sent': True,
         }, status=status.HTTP_200_OK)
     except Exception as exc:

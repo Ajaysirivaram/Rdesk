@@ -4,10 +4,12 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Download, Send, FileText, Trash2, Eye, Pencil, KeyRound, Copy, Mail } from 'lucide-react';
+import { Send, FileText, Trash2, Eye, Pencil, KeyRound, Copy, Mail, Download } from 'lucide-react';
 import DataTable, { type DataTableColumn } from '@/components/DataTable';
 import Modal from '@/components/Modal';
 import { attendanceAPI, departmentAPI, employeeAPI, employeeActivationAPI, employeeAdminAPI } from '@/services/api';
+import EmployeeDashboardView from '@/components/employees/EmployeeDashboardView';
+import EmployeeModuleNav from '@/components/employees/EmployeeModuleNav';
 
 interface DepartmentOption {
   id: number;
@@ -49,7 +51,6 @@ const initialForm: EmployeeFormState = {
   employee_id: '',
   name: '',
   email: '',
-  personal_email: '',
   position: '',
   department_id: '',
   shift_id: '',
@@ -72,6 +73,10 @@ const getSaveEmployeeErrorMessage = (error: any): string => {
     return 'Unable to save employee. Please check all required fields.';
   }
 
+  if (typeof payload.message === 'string' && payload.message.trim()) {
+    return payload.message;
+  }
+
   const errors = payload.errors;
   if (errors && typeof errors === 'object') {
     const firstKey = Object.keys(errors)[0];
@@ -82,10 +87,6 @@ const getSaveEmployeeErrorMessage = (error: any): string => {
     if (typeof firstValue === 'string') {
       return `${firstKey}: ${firstValue}`;
     }
-  }
-
-  if (typeof payload.message === 'string' && payload.message.trim()) {
-    return payload.message;
   }
 
   return 'Unable to save employee. Please check all required fields.';
@@ -112,6 +113,7 @@ const EmployeesPage: React.FC = () => {
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [regeneratingMode, setRegeneratingMode] = useState<PasswordRegenMode | null>(null);
   const [toastState, setToastState] = useState<ToastState | null>(null);
+  const [pageView, setPageView] = useState<'dashboard' | 'table'>('dashboard');
 
   useEffect(() => {
     void loadData();
@@ -217,7 +219,6 @@ const EmployeesPage: React.FC = () => {
       employee_id: employee.employee_id || '',
       name: employee.name || '',
       email: employee.email || '',
-      personal_email: (employee as any).personal_email || '',
       position: employee.position || '',
       department_id: employee.department?.id ? String(employee.department.id) : '',
       shift_id: employee.shift?.id ? String(employee.shift.id) : '',
@@ -311,16 +312,20 @@ const EmployeesPage: React.FC = () => {
         return;
       }
 
-      if (!isEditing && !formData.personal_email?.trim()) {
-        alert('Personal email is required to send the activation invitation.');
-        return;
+      if (!isEditing) {
+        const duplicate = employees.some(
+          (employee) => employee.employee_id?.toUpperCase() === normalizedEmployeeId
+        );
+        if (duplicate) {
+          alert('Employee ID already exists.');
+          return;
+        }
       }
 
       const payload = {
         employee_id: normalizedEmployeeId,
         name: formData.name.trim(),
         email: normalizedEmail,
-        personal_email: formData.personal_email?.trim() || undefined,
         position: formData.position.trim() || 'Employee',
         department_id: Number(formData.department_id),
         shift_id: Number(formData.shift_id),
@@ -332,12 +337,8 @@ const EmployeesPage: React.FC = () => {
         await employeeAPI.update(String(activeEmployeeId), payload);
         setToastState({ type: 'success', message: 'Employee updated successfully.' });
       } else {
-        const createResponse = await employeeAPI.create(payload);
-        const newEmployeeId: number = createResponse.data?.id;
-        setToastState({ type: 'success', message: 'Employee created. Sending invitation...' });
-        if (newEmployeeId) {
-          await sendInvitation(newEmployeeId);
-        }
+        await employeeAPI.create(payload);
+        setToastState({ type: 'success', message: 'Employee created successfully.' });
       }
       setOpenForm(false);
       resetForm();
@@ -527,16 +528,28 @@ const EmployeesPage: React.FC = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Employee Management</h1>
-          <p className="text-sm text-slate-500">Manage employee records, invitations, and payroll actions.</p>
-        </div>
-        <button onClick={openCreateForm} className="h-10 px-4 rounded-xl bg-blue-900 text-white inline-flex items-center gap-2 hover:bg-blue-800">
-          <Plus className="h-4 w-4" />
-          Add Employee
-        </button>
-      </div>
+      <EmployeeModuleNav
+        pageView={pageView}
+        onViewChange={setPageView}
+        onAddEmployee={openCreateForm}
+      />
+
+      {/* ── Dashboard view ── */}
+      {pageView === 'dashboard' && (
+        <EmployeeDashboardView
+          employees={employees}
+          loading={loading}
+          departmentFilter={departmentFilter}
+          locationFilter={locationFilter}
+          onDepartmentChange={setDepartmentFilter}
+          onLocationChange={setLocationFilter}
+          departments={departments}
+          locations={allLocations}
+        />
+      )}
+
+      {/* ── Table view ── */}
+      {pageView === 'table' && (<>
 
       <div className="saas-card saas-section">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -607,6 +620,7 @@ const EmployeesPage: React.FC = () => {
         loading={loading}
         emptyText="No employees found."
       />
+      </>)}
 
       <Modal
         title={isEditing ? 'Edit Employee' : 'Add Employee'}
@@ -652,22 +666,6 @@ const EmployeesPage: React.FC = () => {
                 className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm"
                 placeholder="name@blackroth.in"
                 required
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-600">
-                Personal Email <span className="text-rose-500">*</span>
-                <span className="text-slate-400 font-normal ml-1">(invitation sent here)</span>
-              </label>
-              <input
-                type="email"
-                value={formData.personal_email || ''}
-                onChange={(event) =>
-                  setFormData((prev) => ({ ...prev, personal_email: event.target.value }))
-                }
-                className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm"
-                placeholder="employee@gmail.com"
-                required={!isEditing}
               />
             </div>
             <div className="space-y-1">
