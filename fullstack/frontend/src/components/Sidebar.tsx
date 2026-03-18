@@ -5,6 +5,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import BrandMark from './BrandMark';
 
 export interface SidebarItem {
   label: string;
@@ -27,10 +28,9 @@ const Sidebar: React.FC<SidebarProps> = ({ items, collapsed, onToggle }) => {
     >
       <div className="h-16 border-b border-slate-200 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
-          <img
-            src="/logo.svg"
-            alt="RDesk"
-            className={collapsed ? 'h-8 w-auto shrink-0' : 'h-10 w-auto shrink-0'}
+          <BrandMark
+            compact
+            className={collapsed ? 'text-lg shrink-0' : 'text-2xl shrink-0'}
           />
         </div>
         <button

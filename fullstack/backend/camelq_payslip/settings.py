@@ -85,8 +85,8 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "RDesk",
-        "USER": "ajaydb",
-        "PASSWORD": "ajay",
+        "USER": "root",
+        "PASSWORD": "Blackroth@9922",
         "HOST": "localhost",
         "PORT": "3306",
     }

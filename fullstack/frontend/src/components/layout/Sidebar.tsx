@@ -4,9 +4,9 @@
  */
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
+import {
+  LayoutDashboard,
+  Users,
   FileText, 
   Clock, 
   Calendar, 
@@ -19,6 +19,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import BrandMark from '../BrandMark';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -47,19 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       {/* Logo Section */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-roth-accent flex items-center justify-center shadow-lg">
-            <span className="text-roth-secondary font-bold text-sm" style={{ fontFamily: '"Droid Serif", serif' }}>
-              RD
-            </span>
-          </div>
-          {!isCollapsed && (
-            <h1 
-              className="text-xl font-bold text-white" 
-              style={{ fontFamily: '"Droid Serif", serif' }}
-            >
-              RDesk
-            </h1>
-          )}
+          {!isCollapsed && <BrandMark compact className="leading-none" />}
         </div>
         <button
           onClick={onToggle}

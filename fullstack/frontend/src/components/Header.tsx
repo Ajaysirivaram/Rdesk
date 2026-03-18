@@ -7,6 +7,7 @@ import { LogOut } from 'lucide-react';
 import SearchBar from './SearchBar';
 import NotificationBell from './NotificationBell';
 import Avatar from './Avatar';
+import BrandMark from './BrandMark';
 
 interface HeaderProps {
   collapsed: boolean;
@@ -34,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({
       <div className="h-full px-4 sm:px-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <div className="flex items-center gap-2 shrink-0">
-            <img src="/logo.svg" alt="RDesk Logo" className="h-8 w-auto" />
+            <BrandMark compact className="leading-none" />
           </div>
           <div className="min-w-0 flex-1">
             <SearchBar

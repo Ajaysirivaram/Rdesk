@@ -21,6 +21,7 @@ import EmployeeDashboardPage from './pages/EmployeeDashboard';
 import EmployeePayslipsPage from './pages/EmployeePayslips';
 import EmployeeProfilePage from './pages/EmployeeProfile';
 import EmployeeAttendancePage from './pages/EmployeeAttendance';
+import EmployeeLeavesPage from './pages/EmployeeLeaves';
 
 const RootRedirect = () => {
   const userType = localStorage.getItem('userType');
@@ -65,6 +66,7 @@ function App() {
             <Route element={<EmployeeLayout />}>
               <Route path="/employee/dashboard" element={<EmployeeDashboardPage />} />
               <Route path="/employee/attendance" element={<EmployeeAttendancePage />} />
+              <Route path="/employee/leaves" element={<EmployeeLeavesPage />} />
               <Route path="/employee/payslips" element={<EmployeePayslipsPage />} />
               <Route path="/employee/profile" element={<EmployeeProfilePage />} />
             </Route>

@@ -11,6 +11,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Check, X } from 'lucide-react';
+import BrandMark from './BrandMark';
 
 const ActivateAccount: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -115,11 +116,7 @@ const ActivateAccount: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-md">
-              <span className="text-primary-foreground font-bold text-3xl" style={{ fontFamily: '"Droid Serif", serif' }}>
-                RD
-              </span>
-            </div>
+            <BrandMark />
           </div>
           <CardTitle className="text-2xl font-bold text-primary" style={{ fontFamily: '"Droid Serif", serif' }}>
             Activate Your Account

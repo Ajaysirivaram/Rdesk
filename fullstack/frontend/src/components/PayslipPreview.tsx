@@ -5,7 +5,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import logo from "@/assets/logo.png";
+import BrandMark from "./BrandMark";
 
 import {
   Table,
@@ -169,8 +169,8 @@ const PayslipPreview = ({
     <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-xl space-y-6 border-2 border-black p-10 payslip-container">
       {/* Header */}
       <div className="flex flex-row items-center relative" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', position: 'relative' }}>
-        <div className="w-32 flex-shrink-0" style={{ width: '128px', flexShrink: 0 }}>
-          <img src="/logo.png" alt="RDesk Logo" className="w-full" style={{ width: '100%' }} />
+        <div className="w-32 flex-shrink-0 flex items-center justify-start" style={{ width: '128px', flexShrink: 0 }}>
+          <BrandMark compact className="text-xl leading-none" />
         </div>
         <div className="flex-grow text-center text-sm" style={{ flexGrow: 1, textAlign: 'center', fontSize: '14px' }}>
           <h1 className="text-2xl font-bold" style={{ fontSize: '24px', fontWeight: 'bold', fontFamily: '"Droid Serif", serif' }}>BlackRoth Software Solutions Pvt. Ltd.</h1>
